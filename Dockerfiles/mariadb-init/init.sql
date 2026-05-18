@@ -34,13 +34,14 @@ CREATE TABLE IF NOT EXISTS breaches (
 USE backend;
 
 CREATE TABLE users (
-    username VARCHAR(32) NOT NULL PRIMARY KEY,
+    user_id int NOT NULL auto_increment PRIMARY KEY,
+    username VARCHAR(32) NOT NULL UNIQUE,
     hash VARCHAR(255) NOT NULL,
-    last_login_time TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    last_login_ip VARCHAR(255) NOT NULL,
+    role VARCHAR(32) NOT NULL,
+    rbac_id INT NOT NULL,
+    user_avatar_path VARCHAR(255),
     auth_token VARCHAR(255) NULL,
     auth_token_expire TIMESTAMP NULL DEFAULT NULL,
-    role VARCHAR(255) NOT NULL
-);
+    last_login_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_login_ip VARCHAR(255) NOT NULL
+    );

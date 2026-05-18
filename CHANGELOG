@@ -4,30 +4,3 @@ All notable changes to this project will be documented in this file.
  
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
- 
-## [0.0.3-alpha+063b5819a49f2030628a43fda7e537f2] - 2026-05-13
-Added 1953 files for the front end, all of which are tabler defaults, also added index.html and a few custom js files.
-### Added
-web_data/* (1953 files)
-
-### Changed
-M       CHANGELOG: Updated the changelog to reflect new changes
-M       README: Added Acknowledgements
-
-## [0.0.2-alpha+2d64b965cde6aa282bd2d61e5a9e5095] - 2026-05-11
-
-First push and first addition of Dockerfiles for backend
-### Added
-- Dockerfiles/docker-compose.yml
-- Dockerfiles/mariadb-init/init.sql
-- Dockerfiles/nginx.conf
-- Dockerfiles/setup.sh
-
-## [0.0.1-alpha+2d64b965cde6aa282bd2d61e5a9e5095] - 2026-05-11
- 
-First push and first addition of Dockerfiles for backend
-### Added
-- Dockerfiles/docker-compose.yml
-- Dockerfiles/mariadb-init/init.sql
-- Dockerfiles/nginx.conf
-- Dockerfiles/setup.sh
