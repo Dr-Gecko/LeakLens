@@ -32,7 +32,9 @@ async def createUser(request:Request):
         else: return utils.formatResponse(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except msqlerrors.IntegrityError as error: 
         if error.errno == 1062: return utils.formatResponse(reason="username already exists",status_code=status.HTTP_409_CONFLICT)
-    except Exception: return utils.formatResponse(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as error: 
+        print(error)
+        return utils.formatResponse(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 async def loginUser(request:Request):
     try:
