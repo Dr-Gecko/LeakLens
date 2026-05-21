@@ -23,12 +23,6 @@ services:
       - ${PWD}/../data/shared/:/app/avatars
     working_dir: /app
     environment:
-      mysql_host: ${mysql_host}
-      sql_port: ${mysql_port}
-      mysql_user: ${mysql_user}
-      mysql_password: ${mysql_password}
-      mysql_db: breaches
-      mysql_backend_db: backend
       SHARED_PUBLIC_DIR: /app/avatars
     command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
     depends_on:
@@ -42,9 +36,6 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${mysql_root_password}
-      MYSQL_DATABASE: breaches
-      MYSQL_USER: ${mysql_user}
-      MYSQL_PASSWORD: ${mysql_password}
     volumes:
       - ${PWD}/../data/mariadb:/var/lib/mysql
       - ${PWD}/mariadb-init:/docker-entrypoint-initdb.d:ro
