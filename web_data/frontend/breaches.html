@@ -13,7 +13,7 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-	<title>Admin Dashboard</title>
+	<title>LeakLense - Breaches</title>
 	<!-- CSS files -->
 	<link href="./dist/css/tabler.min.css" rel="stylesheet" />
 	<link href="./dist/css/tabler-flags.min.css" rel="stylesheet" />
@@ -32,8 +32,8 @@
 
 <body>
 	<script src="./dist/js/demo-theme.min.js"></script>
-	<script src="./dist/customjs/leaklense.js?v=1.0.31"></script>
-	<script src="./dist/customjs/breaches.js?v=0.0.30"></script>
+	<script src="./dist/customjs/leaklense.js?v=1.0.33"></script>
+	<script src="./dist/customjs/breaches.js?v=0.0.39"></script>
 	<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
@@ -110,25 +110,19 @@
 						<div class="row flex-fill align-items-center">
 							<div class="col">
 								<ul class="navbar-nav">
-									<li class="nav-item">
-										<a class="nav-link" href="index">
-											<span class="nav-link-icon d-md-none d-lg-inline-block">
-												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+									<li class="nav-item"><a class="nav-link" href="index"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
+													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 													viewBox="0 0 24 24" fill="none" stroke="currentColor"
 													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 													class="icon icon-1">
 													<path d="M5 12l-2 0l9 -9l9 9l-2 0" />
 													<path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
 													<path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
-												</svg>
-											</span>
-											<span class="nav-link-title"> Home</span>
-										</a>
-									</li>
-									<li class="nav-item active">
-										<a class="nav-link" href="./breaches">
-											<span class="nav-link-icon d-md-none d-lg-inline-block">
-												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+												</svg></span><span class="nav-link-title"> Home</span></a></li>
+									<li class="nav-item active"><a class="nav-link" href="./breaches"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
+													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 													viewBox="0 0 24 24" fill="none" stroke="currentColor"
 													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 													class="icon icon-tabler icons-tabler-outline icon-tabler-article">
@@ -138,14 +132,9 @@
 													<path d="M7 8h10" />
 													<path d="M7 12h10" />
 													<path d="M7 16h10" />
-												</svg>
-											</span>
-											<span class="nav-link-title">Breaches</span>
-										</a>
-									</li>
-									<li class="nav-item">
-										<a class="nav-link" href="./users.html">
-											<span class="nav-link-icon d-md-none d-lg-inline-block"><svg
+												</svg></span><span class="nav-link-title">Breaches</span></a></li>
+									<li class="nav-item"><a class="nav-link" href="./users.html"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
 													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 													viewBox="0 0 24 24" fill="none" stroke="currentColor"
 													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -155,10 +144,17 @@
 													<path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
 													<path d="M16 3.13a4 4 0 0 1 0 7.75" />
 													<path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
-												</svg></span>
-											<span class="nav-link-title">Users</span>
-										</a>
-									</li>
+												</svg></span><span class="nav-link-title">Users</span></a></li>
+									<li class="nav-item"><a class="nav-link" href="./search.html"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
+													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+													viewBox="0 0 24 24" fill="none" stroke="currentColor"
+													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+													class="icon icon-tabler icons-tabler-outline icon-tabler-search">
+													<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+													<path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+													<path d="M21 21l-6 -6" />
+												</svg></span><span class="nav-link-title">Search</span></a></li>
 								</ul>
 							</div>
 						</div>
@@ -175,17 +171,138 @@
 				<div class="container-xl">
 					<div class="row g-2 align-items-center">
 						<div class="col">
-							 <h2 class="page-title">
+							<h2 class="page-title">
 								Breaches
 							</h2>
 							<div class="page-pretitle">
 								List and search your breaches
 							</div>
 						</div>
+						<!-- Page title actions -->
+						<div class="col-auto ms-auto d-print-none">
+							<div class="btn-list">
+								<a href="#" class="btn btn-primary btn-5 d-none d-sm-inline-block"
+									data-bs-toggle="modal" data-bs-target="#modal-create-breach">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+										fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+										stroke-linejoin="round" class="icon icon-2">
+										<path d="M12 5l0 14" />
+										<path d="M5 12l14 0" />
+									</svg>
+									Create breach
+								</a>
+								<a href="#" class="btn btn-primary btn-6 d-sm-none btn-icon" data-bs-toggle="modal"
+									data-bs-target="#modal-create-breach" aria-label="Create breach">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+										fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+										stroke-linejoin="round" class="icon icon-2">
+										<path d="M12 5l0 14" />
+										<path d="M5 12l14 0" />
+									</svg>
+								</a>
+							</div>
+							<div class="modal modal-blur fade" id="modal-create-breach" tabindex="-1" role="dialog"
+								aria-hidden="true">
+								<div class="modal-dialog modal-lg" role="document">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title">New breach</h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal"
+												aria-label="Close"></button>
+										</div>
+										<div class="modal-body">
+											<div class="mb-3">
+												<label class="form-label">Breach Victim</label>
+												<input type="text" class="form-control" name="addBreachVictim"
+													placeholder="SalesForce">
+											</div>
+											<div class="mb-3">
+												<label class="form-label">Threat Actor</label>
+												<input type="text" class="form-control" name="addBreachThreatActor"
+													placeholder="ShinyHunters">
+											</div>
+											<div class="mb-3">
+												<label class="form-label">Record Count</label>
+												<input type="text" class="form-control" name="addBreachCount"
+													placeholder="estimate is okay, cronjob will update with full value as data is ingested">
+											</div>
+											<div class="d-flex gap-3">
+												<div class="flex-fill">
+													<div class="form-label">Ingested</div>
+													<select class="form-select" name="addBreachIngested">
+														<option value="Yes">Yes</option>
+														<option value="Pending">Pending</option>
+														<option value="No">No</option>
+													</select>
+												</div>
+												<div class="flex-fill">
+													<div class="mb-3">
+														<label class="form-label">Type</label>
+														<input type="text" class="form-control" name="addBreachType"
+															placeholder="salesforce dump, full dump, PII only">
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="modal-footer">
+											<a href="#" class="btn btn-link link-secondary btn-3"
+												data-bs-dismiss="modal">
+												Cancel
+											</a>
+											<a href="#" id="btn-create-breach-submit"
+												class="btn btn-primary btn-5 ms-auto">
+												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+													viewBox="0 0 24 24" fill="none" stroke="currentColor"
+													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+													class="icon icon-2">
+													<path d="M12 5l0 14" />
+													<path d="M5 12l14 0" />
+												</svg>
+												Create breach
+											</a>
+
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
-			<!-- Page body -->
+
+			<!-- Breach detail modal -->
+			<div class="modal modal-blur fade" id="modal-breach-detail" tabindex="-1" role="dialog" aria-hidden="true">
+				<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<div>
+								<h5 class="modal-title" id="modal-breach-name">—</h5>
+								<div class="text-secondary small" id="modal-breach-id"></div>
+							</div>
+							<span class="badge bg-red-lt ms-auto me-3" id="modal-breach-actor"></span>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="row g-3 mb-3">
+								<div class="col-6 col-md-3">
+									<div class="subheader mb-1">Record Count</div>
+									<div class="fw-bold" id="modal-breach-records">—</div>
+								</div>
+								<div class="col-6 col-md-3">
+									<div class="subheader mb-1">Date Added</div>
+									<div class="fw-bold" id="modal-breach-date">—</div>
+								</div>
+							</div>
+							<div id="modal-breach-extra"></div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-link link-secondary"
+								data-bs-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			<div class="page-body">
 				<div class="container-xl">
 					<div class="row row-deck row-cards">
@@ -218,11 +335,62 @@
 										class="table table-selectable card-table table-vcenter text-nowrap datatable">
 										<thead>
 											<tr>
-												<th class="w-1" data-sort="id" style="cursor:pointer">No. <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sort-icon" style="transition:transform 0.15s,opacity 0.15s;vertical-align:middle"><path d="M6 15l6 -6l6 6"></path></svg></th>
-												<th data-sort="name" style="cursor:pointer">Breach Victim <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sort-icon" style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle"><path d="M6 15l6 -6l6 6"></path></svg></th>
-												<th data-sort="threat_actor" style="cursor:pointer">Threat Actor <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sort-icon" style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle"><path d="M6 15l6 -6l6 6"></path></svg></th>
-												<th data-sort="record_count" style="cursor:pointer">Record Count<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sort-icon" style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle"><path d="M6 15l6 -6l6 6"></path></svg></th>
-												<th data-sort="date_added" style="cursor:pointer">Ingest Date <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sort-icon" style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle"><path d="M6 15l6 -6l6 6"></path></svg></th>
+												<th class="w-1" data-sort="id" style="cursor:pointer">No. <svg
+														xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+														viewBox="0 0 24 24" fill="none" stroke="currentColor"
+														stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+														class="sort-icon"
+														style="transition:transform 0.15s,opacity 0.15s;vertical-align:middle">
+														<path d="M6 15l6 -6l6 6"></path>
+													</svg></th>
+												<th data-sort="name" style="cursor:pointer">Breach Victim <svg
+														xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+														viewBox="0 0 24 24" fill="none" stroke="currentColor"
+														stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+														class="sort-icon"
+														style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle">
+														<path d="M6 15l6 -6l6 6"></path>
+													</svg></th>
+												<th data-sort="threat_actor" style="cursor:pointer">Threat Actor <svg
+														xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+														viewBox="0 0 24 24" fill="none" stroke="currentColor"
+														stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+														class="sort-icon"
+														style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle">
+														<path d="M6 15l6 -6l6 6"></path>
+													</svg></th>
+												<th data-sort="record_count" style="cursor:pointer">Record Count<svg
+														xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+														viewBox="0 0 24 24" fill="none" stroke="currentColor"
+														stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+														class="sort-icon"
+														style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle">
+														<path d="M6 15l6 -6l6 6"></path>
+													</svg></th>
+												<th data-sort="date_added" style="cursor:pointer">Ingested<svg
+														xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+														viewBox="0 0 24 24" fill="none" stroke="currentColor"
+														stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+														class="sort-icon"
+														style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle">
+														<path d="M6 15l6 -6l6 6"></path>
+													</svg></th>
+												<th data-sort="date_added" style="cursor:pointer">Type<svg
+														xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+														viewBox="0 0 24 24" fill="none" stroke="currentColor"
+														stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+														class="sort-icon"
+														style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle">
+														<path d="M6 15l6 -6l6 6"></path>
+													</svg></th>
+												<th data-sort="date_added" style="cursor:pointer">Ingest Date <svg
+														xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+														viewBox="0 0 24 24" fill="none" stroke="currentColor"
+														stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+														class="sort-icon"
+														style="opacity:0.3;transition:transform 0.15s,opacity 0.15s;vertical-align:middle">
+														<path d="M6 15l6 -6l6 6"></path>
+													</svg></th>
 												<th></th>
 											</tr>
 										</thead>

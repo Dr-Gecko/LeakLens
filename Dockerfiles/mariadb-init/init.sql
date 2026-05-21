@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS breaches (
     threat_actor VARCHAR(255) NULL,
     date_added TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     record_count int NULL,
+    ingested VARCHAR(255) NULL,
+    type VARCHAR(255) NULL,
     table_name VARCHAR(255) NULL,
     added_by VARCHAR(255) NULL
 );

@@ -62,23 +62,24 @@ async def _updateUserColumn(userID, column, data):
     if affectedRows > 0: return True 
     else: return False
    
-async def selfUpdate(authToken, request:Request):
+async def selfUpdate(request:Request):
     try:
         jsonData = await request.json()
-        verified = await verifyAuthRole(authToken)        
-        userToEdit = verified[1]
+        auth_token = request.headers.get("api-key")
+        verified_user = await verifyAuthRole(auth_token)      
+        userToEdit = verified_user[1]
         columnToEdit = jsonData['update']
         newData = jsonData['data']
-        if verified[0]!=True: return verified[1]         
-        requiredRole, allowedColumns = (0, utils.allowedSelfEditColumns) if userToEdit == verified[1] else (2, utils.allowedManagerEditColumns)        
-        if verified[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
+        if verified_user[0]!=True: return verified_user[1]         
+        requiredRole, allowedColumns = (0, utils.allowedSelfEditColumns) if userToEdit == verified_user[1] else (2, utils.allowedManagerEditColumns)        
+        if verified_user[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
         if columnToEdit not in allowedColumns: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
         if columnToEdit=="password":
             passwordHasher = PasswordHasher()
             passwordHash = passwordHasher.hash(newData)
             newData=passwordHash
             columnToEdit="hash"   
-        updatedAffectedRows = await database.execute(f"UPDATE users SET `{columnToEdit}` = %s WHERE user_id = %s;", (newData, verified[3]))
+        updatedAffectedRows = await database.execute(f"UPDATE users SET `{columnToEdit}` = %s WHERE user_id = %s;", (newData, verified_user[3]))
         if updatedAffectedRows > 0: return utils.formatResponse(reason=f"successfully updated colum: {columnToEdit} for user: {userToEdit}")
         else: return utils.formatResponse(reason="internal error",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except TypeError: return utils.formatResponse(reason="API key invalid",status_code=status.HTTP_401_UNAUTHORIZED)
@@ -86,16 +87,17 @@ async def selfUpdate(authToken, request:Request):
         print(error)
         return utils.formatResponse(reason="failed",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)   
     
-async def updateUser(authToken, request:Request):
+async def updateUser(request:Request):
     try:
         jsonData = await request.json()
-        verified = await verifyAuthRole(authToken)        
+        auth_token = request.headers.get("api-key")
+        verified_user = await verifyAuthRole(auth_token)      
         userToEdit = jsonData['user']
         columnToEdit = jsonData['column']
         newData = jsonData['data']
-        if verified[0]!=True: return verified[1]
-        requiredRole, allowedColumns = (0, utils.allowedSelfEditColumns) if userToEdit == verified[1] else (2, utils.allowedManagerEditColumns)        
-        if verified[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
+        if verified_user[0]!=True: return verified_user[1]
+        requiredRole, allowedColumns = (0, utils.allowedSelfEditColumns) if userToEdit == verified_user[1] else (2, utils.allowedManagerEditColumns)        
+        if verified_user[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
         if columnToEdit not in allowedColumns: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
         updatedAffectedRows = await database.execute(f"UPDATE users SET `{columnToEdit}` = %s WHERE username = %s;", (newData, userToEdit))
         if updatedAffectedRows > 0: return utils.formatResponse(reason=f"successfully updated colum: {columnToEdit} for user: {userToEdit}")
@@ -103,36 +105,39 @@ async def updateUser(authToken, request:Request):
     except TypeError: return utils.formatResponse(reason="API key invalid",status_code=status.HTTP_401_UNAUTHORIZED)
     except Exception: return utils.formatResponse(reason="failed",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-async def getUserInfo(authToken):
+async def getUserInfo(request:Request):
     try:
         requiredRole = 0
-        verifiedUser = await verifyAuthRole(authToken)
-        if verifiedUser[0]!=True: return verifiedUser[1]
-        if verifiedUser[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
-        userInfo = await database.fetch_one("SELECT username, user_id, role, user_avatar_path FROM users WHERE user_id = %s",(verifiedUser[3],))
+        auth_token = request.headers.get("api-key")
+        verified_user = await verifyAuthRole(auth_token)
+        if verified_user[0]!=True: return verified_user[1]
+        if verified_user[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
+        userInfo = await database.fetch_one("SELECT username, user_id, role, user_avatar_path FROM users WHERE user_id = %s",(verified_user[3],))
         return utils.formatResponse({"user_info":userInfo})
     except TypeError: return utils.formatResponse(reason="API key invalid",status_code=status.HTTP_401_UNAUTHORIZED)
     except Exception: 
         return utils.formatResponse(reason="failed",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-async def getUsersPublic(authToken):
+async def getUsersPublic(request:Request):
     try:
         allUsers = []
         requiredRole = 0
-        verifiedUser = await verifyAuthRole(authToken)
-        if verifiedUser[0]!=True: return verifiedUser[1]
-        if verifiedUser[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
+        auth_token = request.headers.get("api-key")
+        verified_user = await verifyAuthRole(auth_token)
+        if verified_user[0]!=True: return verified_user[1]
+        if verified_user[2] < requiredRole: return utils.formatResponse(reason="invalid permissions",status_code=status.HTTP_401_UNAUTHORIZED)
         userCount = await database.fetch_one("select count(username) as count from users;")
         allUsers = await database.fetch_all("select user_id, username, role, user_avatar_path from users")
         return utils.formatResponse({"count":userCount['count'],"users":allUsers})
     except TypeError: return utils.formatResponse(reason="API key invalid",status_code=status.HTTP_401_UNAUTHORIZED)
     except Exception: return utils.formatResponse(reason="failed",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-async def deleteUser(authToken, request:Request):
+async def deleteUser(request:Request):
     try:
         required_role = 3
         jsonData = await request.json()
-        verified = await verifyAuthRole(authToken)   
+        auth_token = request.headers.get("api-key")
+        verified = await verifyAuthRole(auth_token)   
         userToDelete = jsonData['user']
         if verified[0]!=True:
             return False,utils.formatResponse({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
@@ -148,9 +153,10 @@ async def deleteUser(authToken, request:Request):
     except Exception as error:
         return False,utils.formatResponse({"response":"failed"},status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-async def updateAvatar(request, authToken, uploadedFile : UploadFile):
+async def updateAvatar(request:Request, uploadedFile : UploadFile):
     try:
-        verified = await verifyAuthRole(authToken)      
+        auth_token = request.headers.get("api-key")
+        verified = await verifyAuthRole(auth_token)      
         if verified[0]!=True: 
             return verified[1] 
         with open(f"/app/avatars/{verified[1]}{os.path.splitext(uploadedFile.filename)[1]}", "wb") as buffer:

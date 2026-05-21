@@ -13,7 +13,7 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-	<title>Admin Dashboard</title>
+	<title>LeakLense - Dashboard</title>
 	<!-- CSS files -->
 	<link href="./dist/css/tabler.min.css" rel="stylesheet" />
 	<link href="./dist/css/tabler-flags.min.css" rel="stylesheet" />
@@ -32,8 +32,9 @@
 
 <body>
 	<script src="./dist/js/demo-theme.min.js"></script>
-	<script src="./dist/customjs/leaklense.js?v=1.0.31"></script>
-	<script src="./dist/customjs/dashboard.js?v=0.0.50"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="./dist/customjs/leaklense.js?v=1.0.33"></script>
+	<script src="./dist/customjs/dashboard.js?v=0.0.89"></script>
 	<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
@@ -92,10 +93,6 @@
 							</div>
 						</a>
 						<div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-							<a href="#" class="dropdown-item">Status</a>
-							<a href="./profile.html" class="dropdown-item">Profile</a>
-							<a href="#" class="dropdown-item">Feedback</a>
-							<div class="dropdown-divider"></div>
 							<a href="./settings.html" class="dropdown-item">Settings</a>
 							<a href="./sign-in.html" class="dropdown-item">Logout</a>
 						</div>
@@ -110,25 +107,19 @@
 						<div class="row flex-fill align-items-center">
 							<div class="col">
 								<ul class="navbar-nav">
-									<li class="nav-item active">
-										<a class="nav-link" href="index">
-											<span class="nav-link-icon d-md-none d-lg-inline-block">
-												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+									<li class="nav-item active"><a class="nav-link" href="index"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
+													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 													viewBox="0 0 24 24" fill="none" stroke="currentColor"
 													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 													class="icon icon-1">
 													<path d="M5 12l-2 0l9 -9l9 9l-2 0" />
 													<path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
 													<path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
-												</svg>
-											</span>
-											<span class="nav-link-title"> Home</span>
-										</a>
-									</li>
-									<li class="nav-item">
-										<a class="nav-link" href="./breaches">
-											<span class="nav-link-icon d-md-none d-lg-inline-block">
-												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+												</svg></span><span class="nav-link-title"> Home</span></a></li>
+									<li class="nav-item"><a class="nav-link" href="./breaches"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
+													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 													viewBox="0 0 24 24" fill="none" stroke="currentColor"
 													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 													class="icon icon-tabler icons-tabler-outline icon-tabler-article">
@@ -138,14 +129,9 @@
 													<path d="M7 8h10" />
 													<path d="M7 12h10" />
 													<path d="M7 16h10" />
-												</svg>
-											</span>
-											<span class="nav-link-title">Breaches</span>
-										</a>
-									</li>
-									<li class="nav-item">
-										<a class="nav-link" href="./users.html">
-											<span class="nav-link-icon d-md-none d-lg-inline-block"><svg
+												</svg></span><span class="nav-link-title">Breaches</span></a></li>
+									<li class="nav-item"><a class="nav-link" href="./users.html"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
 													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 													viewBox="0 0 24 24" fill="none" stroke="currentColor"
 													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -155,11 +141,19 @@
 													<path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
 													<path d="M16 3.13a4 4 0 0 1 0 7.75" />
 													<path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
-												</svg></span>
-											<span class="nav-link-title">Users</span>
-										</a>
-									</li>
+												</svg></span><span class="nav-link-title">Users</span></a></li>
+									<li class="nav-item"><a class="nav-link" href="./search.html"><span
+												class="nav-link-icon d-md-none d-lg-inline-block"><svg
+													xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+													viewBox="0 0 24 24" fill="none" stroke="currentColor"
+													stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+													class="icon icon-tabler icons-tabler-outline icon-tabler-search">
+													<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+													<path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+													<path d="M21 21l-6 -6" />
+												</svg></span><span class="nav-link-title">Search</span></a></li>
 								</ul>
+
 							</div>
 						</div>
 					</div>
@@ -416,20 +410,21 @@
 													<span class="bg-x text-white avatar">
 														<!-- Download SVG icon from http://tabler.io/icons/icon/brand-x -->
 														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-															viewBox="0 0 24 24" fill="none" stroke="currentColor"
-															stroke-width="2" stroke-linecap="round"
-															stroke-linejoin="round" class="icon icon-1">
-															<path d="M4 4l11.733 16h4.267l-11.733 -16z" />
-															<path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
+															viewBox="0 0 24 24" fill="currentColor"
+															class="icon icon-tabler icons-tabler-filled icon-tabler-file-upload">
+															<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+															<path
+																d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm0 9l-.09 .004l-.058 .007l-.118 .025l-.105 .035l-.113 .054l-.111 .071a1 1 0 0 0 -.112 .097l-2.5 2.5a1 1 0 0 0 0 1.414l.094 .083a1 1 0 0 0 1.32 -.083l.793 -.793v3.586a1 1 0 0 0 2 0v-3.585l.793 .792a1 1 0 0 0 1.414 -1.414l-2.5 -2.5l-.082 -.073l-.104 -.074l-.098 -.052l-.11 -.044l-.112 -.03l-.126 -.017z" />
+															<path d="M19 7h-4l-.001 -4.001z" />
 														</svg>
 													</span>
 												</div>
 												<div class="col">
 													<div class="font-weight-medium">
-														623 Shares
+														Ingesters Running
 													</div>
-													<div class="text-secondary">
-														16 today
+													<div class="text-secondary" id="ingesters_count">
+														<div class="placeholder placeholder-xs col-11"></div>
 													</div>
 												</div>
 											</div>
@@ -446,18 +441,22 @@
 														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 															viewBox="0 0 24 24" fill="none" stroke="currentColor"
 															stroke-width="2" stroke-linecap="round"
-															stroke-linejoin="round" class="icon icon-1">
+															stroke-linejoin="round"
+															class="icon icon-tabler icons-tabler-outline icon-tabler-notdef">
+															<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+															<path d="M18.49 3.666l-12.976 16.673" />
+															<path d="M5.51 3.666l12.976 16.673" />
 															<path
-																d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3" />
+																d="M5 5a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-14" />
 														</svg>
 													</span>
 												</div>
 												<div class="col">
 													<div class="font-weight-medium">
-														132 Likes
+														Not filled yet
 													</div>
 													<div class="text-secondary">
-														21 today
+														Not filled yet
 													</div>
 												</div>
 											</div>
@@ -479,66 +478,8 @@
 						<div class="col-lg-6">
 							<div class="card">
 								<div class="card-body">
-									<h3 class="card-title">Locations</h3>
-									<div class="ratio ratio-21x9">
-										<div>
-											<div id="a-world" class="w-100 h-100"></div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-12">
-							<div class="row row-cards">
-								<div class="col-10">
-									<div class="card">
-										<div class="card-body">
-											<h3 class="card-title">Locations</h3>
-											<div class="ratio ratio-21x9">
-												<div>
-													<div id="breach-map" class="w-100 h-100"></div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-								<div class="col-2">
-									<div class="card">
-										<div class="card-body">
-											<h3 class="card-title">Locations</h3>
-											<div class="mb-3">
-												<div class="form-label">Toggle switches</div>
-												<label class="form-check form-switch form-switch-3">
-													<input class="form-check-input" type="checkbox" checked="">
-													<span class="form-check-label">Option 1</span>
-												</label>
-												<label class="form-check form-switch form-switch-2">
-													<input class="form-check-input" type="checkbox">
-													<span class="form-check-label">Option 2</span>
-												</label>
-												<label class="form-check form-switch form-switch-2">
-													<input class="form-check-input" type="checkbox">
-													<span class="form-check-label">Option 3</span>
-												</label>
-												<label class="form-check form-switch form-switch-3">
-													<input class="form-check-input" type="checkbox" checked="">
-													<span class="form-check-label">Option 1</span>
-												</label>
-												<label class="form-check form-switch form-switch-3">
-													<input class="form-check-input" type="checkbox" checked="">
-													<span class="form-check-label">Option 1</span>
-												</label>
-												<label class="form-check form-switch form-switch-3">
-													<input class="form-check-input" type="checkbox" checked="">
-													<span class="form-check-label">Option 1</span>
-												</label>
-												<label class="form-check form-switch form-switch-3">
-													<input class="form-check-input" type="checkbox" checked="">
-													<span class="form-check-label">Option 1</span>
-												</label>
-											</div>
-										</div>
-									</div>
+									<h3 class="card-title">Breaches Summary</h3>
+									<div id="chart-breakdown" class="chart-lg"></div>
 								</div>
 							</div>
 						</div>
@@ -550,8 +491,8 @@
 					<div class="row text-center align-items-center flex-row-reverse">
 						<div class="col-lg-auto ms-lg-auto">
 							<ul class="list-inline list-inline-dots mb-0">
-								<li class="list-inline-item"><a href="https://dr-gecko.github.io/LeakLense" target="_blank"
-										class="link-secondary" rel="noopener">Documentation</a></li>
+								<li class="list-inline-item"><a href="https://dr-gecko.github.io/LeakLense"
+										target="_blank" class="link-secondary" rel="noopener">Documentation</a></li>
 								<li class="list-inline-item"><a href="./license.html" class="link-secondary">License</a>
 								</li>
 								<li class="list-inline-item"><a href="https://github.com/tabler/tabler" target="_blank"
@@ -600,4 +541,5 @@
 	<script src="./dist/js/tabler.min.js" defer></script>
 	<script src="./dist/js/demo.min.js" defer></script>
 </body>
+
 </html>

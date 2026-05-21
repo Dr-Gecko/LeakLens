@@ -1,11 +1,11 @@
 database:
   host: 192.168.234.19
   port: 3306
-  user: geckos
+  user: gecko
   password: password
-  breaches_db: breaches
+  breaches_db: leaklense_data
   backend_db: backend
-
 api:
-  map_limit: 5000
-  debug: true
+  name: LeakLense
+  business_id: test
+  location: test

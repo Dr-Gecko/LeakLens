@@ -21,7 +21,7 @@ async function updateUserAvatar() {
         const formData = new FormData();
         formData.append("file", fileInput.files[0]);
         try {
-            const response = await fetch("/api/utils/avatar", {
+            const response = await fetch("/api/auth/avatar", {
                 method: "POST",
                 body: formData,
                 headers: {
@@ -35,7 +35,7 @@ async function updateUserAvatar() {
                 localStorage.setItem("user", JSON.stringify(userData));
                 await update_profile_picture();
                 throw_alert("New avatar successfully uploaded","success")
-            } else if (response.status = 400) {
+            } else if (response.status = 401) {
                 throw_alert("Invalid API Key","error")
                 window.location.href = "/sign-in"
             } else {

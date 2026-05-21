@@ -114,6 +114,20 @@ function getFilteredSorted() {
     return rows;
 }
 
+function openBreachModal(row) {
+    document.getElementById("modal-breach-name").textContent = row.name ?? "—";
+    document.getElementById("modal-breach-id").textContent = row.id ? `#${row.id}` : "";
+    document.getElementById("modal-breach-actor").textContent = row.threat_actor ?? "Unknown";
+    document.getElementById("modal-breach-records").textContent = Number(row.record_count || 0).toLocaleString();
+    document.getElementById("modal-breach-date").textContent = row.date_added
+        ? new Date(row.date_added).toLocaleDateString()
+        : "—";
+    document.getElementById("modal-breach-extra").innerHTML = "";
+
+    const modal = new bootstrap.Modal(document.getElementById("modal-breach-detail"));
+    modal.show();
+}
+
 function renderBreachTable() {
     const tbody = document.getElementById("breach-tbody");
     const infoEl = document.getElementById("table-info");
@@ -129,21 +143,31 @@ function renderBreachTable() {
 
     const start = (tableState.page - 1) * tableState.pageSize;
     const pageRows = rows.slice(start, start + tableState.pageSize);
-
     tbody.innerHTML = pageRows.map(row => `
         <tr>
             <td>${row.id ?? ""}</td>
             <td>
-                <a href="breach.html?id=${row.id}" class="text-reset">
+                <a href="#" class="text-reset breach-name-link" data-breach-id="${row.id}">
                     ${row.name ?? ""}
                 </a>
             </td>
             <td>${row.threat_actor ?? ""}</td>
             <td>${Number(row.record_count || 0).toLocaleString()}</td>
+            <td>${(() => { const v = row.ingested ?? ""; if (v.toLowerCase() === "yes") return `<span class="badge bg-success me-1"></span>Yes`; if (v.toLowerCase() === "no") return `<span class="badge bg-danger me-1"></span>No`; if (v.toLowerCase() === "pending") return `<span class="badge bg-warning me-1"></span>Pending`; return v; })()}</td>
+            <td>${row.type ?? ""}</td>
             <td>${row.date_added ?? ""}</td>
             <td></td>
         </tr>
     `).join("");
+
+    tbody.querySelectorAll(".breach-name-link").forEach(link => {
+        link.addEventListener("click", e => {
+            e.preventDefault();
+            const id = parseInt(link.dataset.breachId);
+            const row = breachData.find(b => b.id === id);
+            if (row) openBreachModal(row);
+        });
+    });
 
     if (infoEl) {
         infoEl.innerHTML = total === 0
@@ -246,7 +270,48 @@ function initBreachTable() {
     renderBreachTable();
 }
 
+async function onCreateBreach(formData) {
+    try {
+        const response = await fetch("/api/breaches/create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "API-KEY": Cookies.get("auth")
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const json = await response.json();
+
+        if (!response.ok || json.status !== "success") {
+            throw new Error(json.status ?? "unknown error");
+        }
+
+        localStorage.removeItem(BREACH_CACHE_KEY);
+        breachData = await getBreachList();
+        renderBreachTable();
+
+        bootstrap.Modal.getInstance(document.getElementById("modal-create-breach"))?.hide();
+    } catch (error) {
+        console.error("Failed to create breach:", error);
+        alert("Failed to create breach: " + error.message);
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     breachData = await getBreachList();
     initBreachTable();
+
+    document.getElementById("btn-create-breach-submit")?.addEventListener("click", async e => {
+        e.preventDefault();
+        const modal = document.getElementById("modal-create-breach");
+        const formData = {
+            name:         modal.querySelector('[name="addBreachVictim"]')?.value?.trim() ?? "",
+            threat_actor: modal.querySelector('[name="addBreachThreatActor"]')?.value?.trim() ?? "",
+            record_count: modal.querySelector('[name="addBreachCount"]')?.value?.trim() ?? "",
+            type:         modal.querySelector('[name="addBreachType"]')?.value?.trim() ?? "",
+            ingested:     modal.querySelector('[name="addBreachIngested"]')?.value ?? "Pending",
+        };
+        await onCreateBreach(formData);
+    });
 });

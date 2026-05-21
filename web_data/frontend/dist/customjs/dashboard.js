@@ -7,24 +7,13 @@ const STATS_MAX_AGE_MS = 60 * 60 * 1000;
 async function getTopStatsData() {
     try {
         const response = await fetch("/api/breaches/stats");
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-
         if (data.status === "success") {
-            const cached = {
-                data: data.data,
-                fetchedAt: Date.now()
-            };
-
+            const cached = { data: data.data, fetchedAt: Date.now() };
             localStorage.setItem("stats", JSON.stringify(cached));
-
             return cached;
         }
-
         return null;
     } catch (error) {
         console.error("Request failed:", error);
@@ -35,12 +24,27 @@ async function getTopStatsData() {
 function formatStatsAge(fetchedAt) {
     const ageMs = Date.now() - fetchedAt;
     const minutes = Math.floor(ageMs / 60000);
-
     if (minutes < 1) return "just now";
     if (minutes < 60) return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
-
     const hours = Math.floor(minutes / 60);
     return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+}
+
+async function loadBreachBreakdown() {
+    try {
+        const response = await fetch("/api/breaches/list");
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (data.status !== "success") return null;
+        const typeCounts = {};
+        for (const breach of data.data) {
+            const type = breach.type || "Unknown";
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+        }
+        return typeCounts;
+    } catch (e) {
+        return null;
+    }
 }
 
 async function loadStatsData() {
@@ -48,11 +52,9 @@ async function loadStatsData() {
     let fetchedAt = null;
 
     const cachedStats = localStorage.getItem("stats");
-
     if (cachedStats) {
         try {
             const parsed = JSON.parse(cachedStats);
-
             if (parsed && parsed.fetchedAt) {
                 if (Date.now() - parsed.fetchedAt < STATS_MAX_AGE_MS) {
                     statsData = parsed.data;
@@ -71,7 +73,6 @@ async function loadStatsData() {
 
     if (!statsData) {
         const result = await getTopStatsData();
-
         if (result) {
             statsData = result.data;
             fetchedAt = result.fetchedAt;
@@ -81,134 +82,100 @@ async function loadStatsData() {
     if (!statsData) return;
 
     const ageText = fetchedAt ? `Updated ${formatStatsAge(fetchedAt)}` : "";
-
     const ageSuffix = ageText
         ? `<small class="text-muted d-block" style="font-size:0.8em">${ageText}</small>`
         : "";
 
     const recordsElement = document.getElementById("records_count");
     const breachesElement = document.getElementById("breaches_count");
+    const ingestersElement = document.getElementById("ingesters_count");
 
-    if (recordsElement) {
-        recordsElement.innerHTML =
-            `${Number(statsData.total_entries || 0).toLocaleString()} records stored${ageSuffix}`;
-    }
-
-    if (breachesElement) {
-        breachesElement.innerHTML =
-            `${Number(statsData.breaches || 0).toLocaleString()} breaches monitored${ageSuffix}`;
-    }
+    if (recordsElement) recordsElement.innerHTML = `${Number(statsData.total_entries || 0).toLocaleString()} records stored${ageSuffix}`;
+    if (ingestersElement) ingestersElement.innerHTML = `0 Ingesters running ${ageSuffix}`;
+    if (breachesElement) breachesElement.innerHTML = `${Number(statsData.breaches || 0).toLocaleString()} breaches monitored${ageSuffix}`;
 }
 
+function renderTrafficChart() {
+    if (!window.ApexCharts) return;
+    const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+    new ApexCharts(document.getElementById("chart-mentions"), {
+        chart: {
+            type: "bar",
+            fontFamily: "inherit",
+            height: 240,
+            parentHeightOffset: 0,
+            toolbar: { show: false },
+            animations: { enabled: false },
+            stacked: true,
+        },
+        plotOptions: { bar: { columnWidth: "50%" } },
+        dataLabels: { enabled: false },
+        fill: { opacity: 1 },
+        series: [
+            { name: "Web",    data: [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 2, 12, 5, 8, 22, 6, 8, 6, 4, 1, 8, 24, 29, 51, 40, 47, 23, 26, 50, 26, 41, 22, 46, 47, 81, 46, 6] },
+            { name: "Social", data: [2, 5, 4, 3, 3, 1, 4, 7, 5, 1, 2, 5, 3, 2, 6, 7, 7, 1, 5, 5, 2, 12, 4, 6, 18, 3, 5, 2, 13, 15, 20, 47, 18, 15, 11, 10, 0] },
+            { name: "Other",  data: [2, 9, 1, 7, 8, 3, 6, 5, 5, 4, 6, 4, 1, 9, 3, 6, 7, 5, 2, 8, 4, 9, 1, 2, 6, 7, 5, 1, 8, 3, 2, 3, 4, 9, 7, 1, 6] },
+        ],
+        tooltip: { theme: isDark ? "dark" : "light" },
+        grid: {
+            padding: { top: -20, right: 0, left: -4, bottom: -4 },
+            strokeDashArray: 4,
+            xaxis: { lines: { show: true } },
+        },
+        xaxis: {
+            labels: { padding: 0 },
+            tooltip: { enabled: false },
+            axisBorder: { show: false },
+            type: "datetime",
+        },
+        yaxis: { labels: { padding: 4 } },
+        labels: [
+            "2020-06-20", "2020-06-21", "2020-06-22", "2020-06-23", "2020-06-24", "2020-06-25", "2020-06-26",
+            "2020-06-27", "2020-06-28", "2020-06-29", "2020-06-30", "2020-07-01", "2020-07-02", "2020-07-03",
+            "2020-07-04", "2020-07-05", "2020-07-06", "2020-07-07", "2020-07-08", "2020-07-09", "2020-07-10",
+            "2020-07-11", "2020-07-12", "2020-07-13", "2020-07-14", "2020-07-15", "2020-07-16", "2020-07-17",
+            "2020-07-18", "2020-07-19", "2020-07-20", "2020-07-21", "2020-07-22", "2020-07-23", "2020-07-24",
+            "2020-07-25", "2020-07-26",
+        ],
+        colors: [tabler.getColor("primary"), tabler.getColor("primary", 0.8), tabler.getColor("green", 0.8)],
+        legend: { show: false },
+    }).render();
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-// // ─── Leaflet map ─────────────────────────────────────────────────────────────
-
-// const CONTINENTS = [
-//     { name: "North America", lat: 54,  lng: -100, bounds: { north: 72,  south: 15,  east: -50,  west: -168 } },
-//     { name: "South America", lat: -15, lng: -60,  bounds: { north: 13,  south: -56, east: -34,  west: -82  } },
-//     { name: "Europe",        lat: 54,  lng: 15,   bounds: { north: 72,  south: 34,  east: 45,   west: -25  } },
-//     { name: "Africa",        lat: 5,   lng: 20,   bounds: { north: 38,  south: -35, east: 52,   west: -18  } },
-//     { name: "Asia",          lat: 45,  lng: 90,   bounds: { north: 78,  south: 0,   east: 145,  west: 25   } },
-//     { name: "Oceania",       lat: -25, lng: 135,  bounds: { north: 0,   south: -50, east: 180,  west: 110  } },
-// ];
-
-// function initBreachMap() {
-//     map = L.map("breach-map", {
-//         preferCanvas: true
-//     }).setView([20, 0], 2);
-
-//     L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_dark/{z}/{x}/{y}{r}.{ext}', {
-//         minZoom: 0,
-//         maxZoom: 20,
-//         attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-//         ext: 'png'
-//     }).addTo(map);
-
-//     markerLayer = L.layerGroup().addTo(map);
-
-//     loadContinentMarkers();
-// }
-
-// async function fetchContinentCount(continent) {
-//     let total = 0;
-//     let offset = 0;
-
-//     while (true) {
-//         const params = new URLSearchParams({
-//             north: continent.bounds.north,
-//             south: continent.bounds.south,
-//             east: continent.bounds.east,
-//             west: continent.bounds.west,
-//             zoom: 2,
-//             limit: 5000,
-//             offset
-//         });
-
-//         const response = await fetch(`/api/breaches/map?${params}`, {
-//             headers: { "API-KEY": Cookies.get("auth") || "" }
-//         });
-
-//         if (!response.ok) break;
-
-//         const json = await response.json();
-//         if (json.status !== "success") break;
-
-//         const rows = json.data.rows || [];
-//         total += rows.reduce((sum, row) => sum + Number(row.count || 0), 0);
-
-//         if (rows.length < 5000) break;
-//         offset += 5000;
-//     }
-
-//     return total;
-// }
-
-// async function loadContinentMarkers() {
-//     if (!map || !markerLayer) return;
-
-//     markerLayer.clearLayers();
-
-//     await Promise.all(CONTINENTS.map(async (continent) => {
-//         try {
-//             const count = await fetchContinentCount(continent);
-//             if (count === 0) return;
-
-//             const radius = Math.min(60, Math.max(15, Math.log10(count) * 10));
-
-//             const marker = L.circleMarker([continent.lat, continent.lng], {
-//                 radius,
-//                 weight: 2,
-//                 fillOpacity: 0.55
-//             });
-
-//             marker.bindTooltip(count.toLocaleString(), {
-//                 permanent: true,
-//                 direction: "center",
-//                 className: "cluster-label"
-//             });
-
-//             marker.bindPopup(`<strong>${continent.name}</strong><br>${count.toLocaleString()} records`);
-
-//             markerLayer.addLayer(marker);
-//         } catch (error) {
-//             console.error(`Failed to load ${continent.name}:`, error);
-//         }
-//     }));
-// }
+async function renderBreachBreakdownChart() {
+    if (!window.ApexCharts) return;
+    const typeCounts = await loadBreachBreakdown();
+    const labels = typeCounts ? Object.keys(typeCounts) : [];
+    const series = typeCounts ? Object.values(typeCounts) : [];
+    const tablerPalette = ["primary", "green", "yellow", "red", "purple", "azure", "orange", "teal", "pink", "cyan"];
+    const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+    const colors = labels.map((_, i) => tabler.getColor(tablerPalette[i % tablerPalette.length]));
+    new ApexCharts(document.getElementById("chart-breakdown"), {
+        chart: {
+            type: "donut",
+            fontFamily: "inherit",
+            height: 240,
+            parentHeightOffset: 0,
+            toolbar: { show: false },
+            animations: { enabled: false },
+        },
+        series,
+        labels,
+        colors,
+        tooltip: { theme: isDark ? "dark" : "light" },
+        legend: {
+            position: "bottom",
+            labels: { colors: tabler.getColor("body-color") },
+        },
+        responsive: [{
+            breakpoint: 480,
+            options: { chart: { width: 200 }, legend: { position: "bottom" } },
+        }],
+    }).render();
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadStatsData();
-    //initBreachMap();
+    renderTrafficChart();
+    await renderBreachBreakdownChart();
 });

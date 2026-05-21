@@ -10,3 +10,6 @@ dev/
 *test*.py
 tests/
 avatars/
+ingesters
+.claude
+server_config.yml
