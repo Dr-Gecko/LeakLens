@@ -21,7 +21,7 @@ async def createUser(request:Request):
         passwordHasher = PasswordHasher()
         passwordHash = passwordHasher.hash(password)
         user_count = await database.fetch_all("select count(*) from users")
-        if user_count < 1:
+        if user_count['count(*)'] < 1:
             user_role=4
             user_title="owner"
         else:
