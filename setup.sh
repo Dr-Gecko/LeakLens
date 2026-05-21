@@ -18,5 +18,6 @@ EOF
 cat > Dockerfiles/.env <<EOF
 MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
 EOF
-
+cd Dockerfiles
+docker compose up
 echo "http://localhost/sign-up"
