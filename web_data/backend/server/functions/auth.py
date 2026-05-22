@@ -21,8 +21,8 @@ async def createUser(request:Request):
         requestIP = request.headers.get("X-Forwarded-For") or request.client.host
         passwordHasher = PasswordHasher()
         passwordHash = passwordHasher.hash(password)
-        user_count = await database.fetch_all("select count(*) from users")
-        if int(user_count) < 1:
+        user_count = await database.fetch_one("select count(*) from users")
+        if int(user_count['count(*)']) < 1:
             rbac_id=4
             user_title="owner"
         else:
