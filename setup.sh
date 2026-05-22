@@ -4,7 +4,7 @@ MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)
 cat > web_data/backend/server/server_config.yml <<EOF
 database:
   host: mariadb
-  port: 3305
+  port: 3306
   user: LeakLense
   password: changeme
   breaches_db: breaches
