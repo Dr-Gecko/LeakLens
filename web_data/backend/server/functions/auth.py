@@ -2,6 +2,7 @@ import os
 import time
 import argon2
 import datetime
+import traceback
 from uuid import uuid4
 from base64 import b64encode
 from fastapi import UploadFile
@@ -34,6 +35,7 @@ async def createUser(request:Request):
         if error.errno == 1062: return utils.formatResponse(reason="username already exists",status_code=status.HTTP_409_CONFLICT)
     except Exception as error: 
         print(error)
+        print(traceback.format_exc())
         return utils.formatResponse(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 async def loginUser(request:Request):
