@@ -22,12 +22,12 @@ async def createUser(request:Request):
         passwordHash = passwordHasher.hash(password)
         user_count = await database.fetch_all("select count(*) from users")
         if int(user_count['count(*)']) < 1:
-            user_role=4
+            rbac_id=4
             user_title="owner"
         else:
-            user_role=0
+            rbac_id=0
             user_title="user"
-        user_insert_affected = await database.execute("INSERT INTO users (username, hash, role, rbac_id, user_avatar_path, last_login_ip) VALUES (%s, %s, %s, %s, %s, %s);", (username, passwordHash, user_title, user_role, "/dist/img/default.png",requestIP))
+        user_insert_affected = await database.execute("INSERT INTO users (username, hash, role, rbac_id, user_avatar_path, last_login_ip) VALUES (%s, %s, %s, %s, %s, %s);", (username, passwordHash, user_title, rbac_id, "/dist/img/default.png",requestIP))
         if user_insert_affected==1: return utils.formatResponse(reason=f"created user {username}")
         else: return utils.formatResponse(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except msqlerrors.IntegrityError as error: 
