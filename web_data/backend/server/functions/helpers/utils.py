@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 # Breaches Table Format
 def safe_table_name(name: str) -> str:
     name=name.replace(" ","_").lower()
-    if not re.fullmatch(r"[A-Za-z0-9_]+", name): 
+    if not re.fullmatch(r"[A-Za-z0-9_]+", name):
         raise ValueError("Invalid table name")
     return name
 def generate_breach_table(breach_name):
@@ -24,13 +24,13 @@ def generate_breach_table(breach_name):
     return breach_table,adapted_table_name
 
 
-allowedSelfEditColumns = {
+allowed_self_edit_columns = {
     "email",
     "avatar",
     "password",
     "username"
 }
-allowedManagerEditColumns = {
+allowed_manager_edit_columns = {
     "email",
     "avatar",
     "last_login_ip",
@@ -45,14 +45,6 @@ rbac_reference = {
     "owner":4,
     "root":5
 }
-def formatResponse(data: Any = None, status_code: int = status.HTTP_200_OK, reason: str = "success"):
-    return JSONResponse(
-        status_code=status_code,
-        content={
-            "status": reason,
-            "data": data if data is not None else {},
-        },
-    )
 def format_response(data: Any = None, status_code: int = status.HTTP_200_OK, reason: str = "success"):
     return JSONResponse(
         status_code=status_code,

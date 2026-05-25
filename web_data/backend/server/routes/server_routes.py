@@ -4,9 +4,9 @@ from fastapi import APIRouter, Request, Header
 router = APIRouter(prefix="/server", tags=["Utils"])
 
 @router.get("/config")
-async def getConfig():
+async def get_config():
     return await server.printconfig()
 
 @router.post("/config")
-async def editConfig(request:Request):
-    return await server.editConfig(request)
+async def edit_config(request:Request):
+    return await server.edit_config(request)

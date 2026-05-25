@@ -6,19 +6,19 @@ from fastapi.responses import StreamingResponse
 router = APIRouter(prefix="/breaches", tags=["Leaklense"])
 
 @router.get("/stats")
-async def getStatsData(request:Request):
-    return await breach.pullStatsData()
+async def get_stats_data(request:Request):
+    return await breach.pull_stats_data()
 
 @router.get("/list")
-async def listBreaches(request:Request):
-    return await breach.pullBreaches()
+async def list_breaches(request:Request):
+    return await breach.pull_breaches()
 
 @router.get("/search")
-async def searchBreaches(request: Request, table_name: str, search_value: str, search_field: str = None,limit:int = 100):
-    return await breach.searchAllColumns(table_name, search_value, search_field=search_field,limit=limit)
+async def search_breaches(request: Request, table_name: str, search_value: str, search_field: str = None,limit:int = 100):
+    return await breach.search_all_columns(table_name, search_value, search_field=search_field,limit=limit)
 
 @router.post('/create')
-async def createBreach(request: Request):
+async def create_breach(request: Request):
     return await breach.create_breach(request)
 
 @router.get("/reload")

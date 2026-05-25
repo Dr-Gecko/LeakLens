@@ -4,14 +4,14 @@ from functions.helpers import config as config
 
 
 async def printconfig():
-    return config.loadConfig()
+    return config.load_config()
 
-async def editConfig(request:Request):
+async def edit_config(request:Request):
     try:
-        configData = config.loadConfig()
-        requestData = await request.json()
-        configData[requestData['parent']][requestData['child']] = requestData['data']
-        config.saveConfig(configData)
-        return utils.formatResponse(reason="Updated config")
+        config_data = config.load_config()
+        request_data = await request.json()
+        config_data[request_data['parent']][request_data['child']] = request_data['data']
+        config.save_config(config_data)
+        return utils.format_response(reason="Updated config")
     except Exception as error:
         return False

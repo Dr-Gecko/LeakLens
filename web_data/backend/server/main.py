@@ -4,9 +4,9 @@ from fastapi.staticfiles import StaticFiles
 
 import functions.helpers.utils as utils
 
-from routes.authRoutes import router as authRouter
-from routes.breachesRoutes import router as breachRouter
-from routes.serverRoutes import router as serverRouter
+from routes.auth_routes import router as auth_router
+from routes.breaches_routes import router as breach_router
+from routes.server_routes import router as server_router
 app = FastAPI(docs_url=None, redoc_url=None)
 app.openapi = lambda: utils.custom_openapi(app)
 
@@ -16,6 +16,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(authRouter)
-app.include_router(breachRouter)
-app.include_router(serverRouter)
+app.include_router(auth_router)
+app.include_router(breach_router)
+app.include_router(server_router)
