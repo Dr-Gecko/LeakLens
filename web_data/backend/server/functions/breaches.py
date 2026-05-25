@@ -8,68 +8,38 @@ import functions.auth as auth
 import functions.helpers.utils as utils
 import functions.helpers.database as database
 from functions.helpers import config as config
-from fastapi.responses import StreamingResponse
 
 async def reload_count_stream(request: Request):
-
     breach_database = config.get_config_value("database.breaches_db")
-
     auth_token = request.headers.get("api-key")
     verified = await auth.verify_auth_role(auth_token)
-
-    tables = await database.fetch_all(
-        "select table_name from breaches",
-        database=breach_database
-    )
-
-    total_tables = len(tables)
-
+    if not verified[0]:
+        yield f"data: {json.dumps({'status': 'error', 'reason': 'API key invalid', 'progress': 0})}\n\n"
+        return
     try:
-
+        tables = await database.fetch_all("SELECT table_name FROM breaches WHERE table_name IS NOT NULL",database=breach_database)
+        total_tables = len(tables)
+        if total_tables == 0:
+            yield f"data: {json.dumps({'status': 'finished', 'complete': True, 'progress': 100})}\n\n"
+            return
         for index, table in enumerate(tables, start=1):
-
             if await request.is_disconnected():
                 break
-
-            table_name = table['table_name']
-
-            # send current step update
-            yield f"data: {json.dumps({
-                'status': 'processing',
-                'progress': round(round(((index - 1) / total_tables) * 100, 0),0)
-            })}\n\n"
-
-            count = await database.fetch_one(
-                f"select count(*) as total from {table_name}",
-                database=breach_database
-            )
-
+            table_name = table["table_name"]
+            yield f"data: {json.dumps({'status': 'processing', 'table': table_name, 'progress': round(((index - 1) / total_tables) * 100, 2)})}\n\n"
+            count = await database.fetch_one(f"SELECT COUNT(*) AS total FROM `{table_name}`",database=breach_database)
             record_count = count["total"]
-
-            await database.execute(
-                "update breaches set record_count = %s where table_name = %s",
-                params=(record_count, table_name),
-                database=breach_database
-            )
-
+            await database.execute("UPDATE breaches SET record_count = %s WHERE table_name = %s",params=(record_count, table_name),database=breach_database)
             progress_percent = round((index / total_tables) * 100, 2)
-
-            # send completed step update
-            yield f"data: {json.dumps({
-                'status': 'completed',
-                'progress': progress_percent
-            })}\n\n"
-
+            yield f"data: {json.dumps({'status': 'completed', 'table': table_name, 'records': record_count, 'progress': progress_percent})}\n\n"
             await asyncio.sleep(0.1)
-
-        yield f"data: {json.dumps({
-            'status': 'finished',
-            'complete': True,
-            'progress': 100
-        })}\n\n"
-
+        yield f"data: {json.dumps({'status': 'finished', 'complete': True, 'progress': 100})}\n\n"
     except asyncio.CancelledError:
         print("Stream cancelled")
+        raise
+    except Exception as error:
+        print(error)
+        yield f"data: {json.dumps({'status': 'error', 'reason': 'failed to reload counts'})}\n\n"
     
     
 async def create_breach(request:Request):

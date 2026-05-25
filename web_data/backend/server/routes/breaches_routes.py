@@ -1,8 +1,6 @@
 import functions.breaches as breach
-from fastapi import APIRouter, Request, Header
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
-
-
 router = APIRouter(prefix="/breaches", tags=["Leaklense"])
 
 @router.get("/stats")

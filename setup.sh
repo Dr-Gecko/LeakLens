@@ -13,6 +13,10 @@ api:
   name: LeakLense
   business_id: test
   location: test
+  containers_to_monitor:
+  - nginx_server
+  - fastapi_server
+  - mariadb_server
 EOF
 
 cat > Dockerfiles/.env <<EOF

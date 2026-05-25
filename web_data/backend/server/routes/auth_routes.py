@@ -1,7 +1,6 @@
 import functions.auth as auth
 import functions.helpers.utils as utils
-
-from fastapi import APIRouter, Request, Header, status, UploadFile, File
+from fastapi import APIRouter, Request, status, UploadFile, File
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
