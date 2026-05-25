@@ -1,7 +1,7 @@
 
-# LeakLense
+# LeakLens
 
-LeakLense is a data visualization tool specifically target towards data breaches. It helps you view the data you have related to breaches, query specific information, build maps, assist with OSINT/HUMINT
+LeakLens is a data visualization tool specifically target towards data breaches. It helps you view the data you have related to breaches, query specific information, build maps, assist with OSINT/HUMINT
 ## Acknowledgements
 
  - [Tabler](https://github.com/tabler/tabler)
@@ -9,7 +9,7 @@ LeakLense is a data visualization tool specifically target towards data breaches
 
 Clone the project
 ```bash
-  git clone https://github.com/Dr-Gecko/LeakLense.git
+  git clone https://github.com/Dr-Gecko/LeakLens.git
 ```
 
 
@@ -19,7 +19,7 @@ Clone the project
 Go to the project directory
 
 ```bash
-  cd LeakLense/Dockerfiles
+  cd LeakLens/Dockerfiles
 ```
 
 Run Setup script
@@ -28,7 +28,7 @@ Run Setup script
   ./setup.sh
 ```
 
-Start LeakLense
+Start LeakLens
 
 ```bash
   docker compose up -d

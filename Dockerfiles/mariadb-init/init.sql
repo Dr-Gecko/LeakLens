@@ -1,11 +1,11 @@
 CREATE DATABASE IF NOT EXISTS breaches;
 CREATE DATABASE IF NOT EXISTS backend;
 
-DROP USER IF EXISTS 'LeakLense'@'%';
-CREATE USER 'LeakLense'@'%' IDENTIFIED BY 'changeme';
+DROP USER IF EXISTS 'LeakLens'@'%';
+CREATE USER 'LeakLens'@'%' IDENTIFIED BY 'changeme';
 
-GRANT ALL PRIVILEGES ON breaches.* TO 'LeakLense'@'%';
-GRANT ALL PRIVILEGES ON backend.* TO 'LeakLense'@'%';
+GRANT ALL PRIVILEGES ON breaches.* TO 'LeakLens'@'%';
+GRANT ALL PRIVILEGES ON backend.* TO 'LeakLens'@'%';
 
 FLUSH PRIVILEGES;
 

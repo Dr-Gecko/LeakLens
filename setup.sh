@@ -5,12 +5,12 @@ cat > web_data/backend/server/server_config.yml <<EOF
 database:
   host: mariadb
   port: 3306
-  user: LeakLense
+  user: LeakLens
   password: changeme
   breaches_db: breaches
   backend_db: backend
 api:
-  name: LeakLense
+  name: LeakLens
   business_id: test
   location: test
   containers_to_monitor:

@@ -1,11 +1,11 @@
 # Changelog
-Changelog for LeakLense
+Changelog for LeakLens
 
 
 ## [0.0.70] - 2026-05-18
 
 ### Fixed
-- Fixed unnecessary imports [#29](https://github.com/Dr-Gecko/LeakLense/issues/29)
-- Fixed main.py import errors [#28](https://github.com/Dr-Gecko/LeakLense/issues/28)
-- Fixed Codebase refactoring [#24](https://github.com/Dr-Gecko/LeakLense/issues/24)
+- Fixed unnecessary imports [#29](https://github.com/Dr-Gecko/LeakLens/issues/29)
+- Fixed main.py import errors [#28](https://github.com/Dr-Gecko/LeakLens/issues/28)
+- Fixed Codebase refactoring [#24](https://github.com/Dr-Gecko/LeakLens/issues/24)
 
