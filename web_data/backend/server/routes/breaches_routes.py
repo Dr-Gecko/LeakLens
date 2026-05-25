@@ -19,9 +19,14 @@ async def search_breaches(request: Request, table_name: str, search_value: str, 
 async def create_breach(request: Request):
     return await breach.create_breach(request)
 
+@router.post('/edit')
+async def edit_breach(request: Request):
+    return await breach.update_breach(request)
+
 @router.get("/reload")
 async def reload_breach_count(request: Request):
     return StreamingResponse(
         breach.reload_count_stream(request),
         media_type="text/event-stream"
     )
+

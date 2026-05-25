@@ -1,5 +1,4 @@
 const BREACH_CACHE_KEY = "breaches";
-
 const tableState = {
     search: "",
     sortCol: "id",
@@ -9,6 +8,9 @@ const tableState = {
 };
 
 let breachData = [];
+
+function openBreachModal(row) {document.getElementById("modal-breach-name").textContent = row.name ?? "—";document.getElementById("modal-breach-id").textContent = row.id ? `#${row.id}` : "";document.getElementById("modal-breach-actor").textContent = row.threat_actor ?? "Unknown";document.getElementById("modal-breach-records").textContent = Number(row.record_count || 0).toLocaleString();document.getElementById("modal-breach-date").textContent = row.date_added? new Date(row.date_added).toLocaleDateString(): "—";document.getElementById("modal-breach-extra").innerHTML = "";const modal = new bootstrap.Modal(document.getElementById("modal-breach-detail"));modal.show();}
+
 
 function getCachedBreachList() {
     const cached = localStorage.getItem(BREACH_CACHE_KEY);
@@ -114,18 +116,54 @@ function getFilteredSorted() {
     return rows;
 }
 
-function openBreachModal(row) {
-    document.getElementById("modal-breach-name").textContent = row.name ?? "—";
-    document.getElementById("modal-breach-id").textContent = row.id ? `#${row.id}` : "";
-    document.getElementById("modal-breach-actor").textContent = row.threat_actor ?? "Unknown";
-    document.getElementById("modal-breach-records").textContent = Number(row.record_count || 0).toLocaleString();
-    document.getElementById("modal-breach-date").textContent = row.date_added
-        ? new Date(row.date_added).toLocaleDateString()
-        : "—";
-    document.getElementById("modal-breach-extra").innerHTML = "";
+function openEditModal(row) {
+    const modalEl = document.getElementById("modal-edit-breach");
+    modalEl.dataset.breachId = row.id;
+    modalEl.dataset.originalRow = JSON.stringify({
+        name: row.name ?? "",
+        threat_actor: row.threat_actor ?? "",
+        record_count: String(row.record_count ?? ""),
+        type: row.type ?? "",
+        ingested: row.ingested ?? "",
+    });
+    document.getElementById("modal-edit-name").value = row.name ?? "";
+    document.getElementById("modal-edit-actor").value = row.threat_actor ?? "";
+    document.getElementById("modal-edit-records").value = row.record_count ?? "";
+    document.getElementById("modal-edit-type").value = row.type ?? "";
+    const ingestedEl = document.getElementById("modal-edit-ingested");
+    const ingestedVal = (row.ingested ?? "").toLowerCase();
+    for (const opt of ingestedEl.options) {
+        if (opt.value.toLowerCase() === ingestedVal) { opt.selected = true; break; }
+    }
+    new bootstrap.Modal(modalEl).show();
+}
 
-    const modal = new bootstrap.Modal(document.getElementById("modal-breach-detail"));
-    modal.show();
+async function onEditBreach(id, formData) {
+    try {
+        const response = await fetch("/api/breaches/edit", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "API-KEY": Cookies.get("auth")
+            },
+            body: JSON.stringify({id:id,fields:formData })
+        });
+
+        const json = await response.json();
+
+        if (!response.ok || json.status !== "success") {
+            throw new Error(json.status ?? "unknown error");
+        }
+
+        localStorage.removeItem(BREACH_CACHE_KEY);
+        breachData = await getBreachList();
+        renderBreachTable();
+
+        bootstrap.Modal.getInstance(document.getElementById("modal-edit-breach"))?.hide();
+    } catch (error) {
+        console.error("Failed to edit breach:", error);
+        alert("Failed to edit breach: " + error.message);
+    }
 }
 
 function renderBreachTable() {
@@ -136,7 +174,7 @@ function renderBreachTable() {
     if (!tbody) return;
 
     const rows = getFilteredSorted();
-    const total = rows.length;  
+    const total = rows.length;
     const totalPages = Math.max(1, Math.ceil(total / tableState.pageSize));
 
     if (tableState.page > totalPages) tableState.page = totalPages;
@@ -156,10 +194,24 @@ function renderBreachTable() {
             <td>${(() => { const v = row.ingested ?? ""; if (v.toLowerCase() === "yes") return `<span class="badge bg-success me-1"></span>Yes`; if (v.toLowerCase() === "no") return `<span class="badge bg-danger me-1"></span>No`; if (v.toLowerCase() === "pending") return `<span class="badge bg-warning me-1"></span>Pending`; return v; })()}</td>
             <td>${row.type ?? ""}</td>
             <td>${row.date_added ?? ""}</td>
-            <td></td>
+            <td class="text-end">
+                            <span class="dropdown">
+                              <button class="btn dropdown-toggle align-text-top" data-bs-boundary="viewport" data-bs-toggle="dropdown">Actions</button>
+                              <div class="dropdown-menu dropdown-menu-end">
+                                <a class="dropdown-item breach-edit" data-breach-id="${row.id}">Edit</a>
+                                <a class="dropdown-item">Delete</a>
+                              </div>
+                          </td>
         </tr>
     `).join("");
-
+    tbody.querySelectorAll(".breach-edit").forEach(link => {
+        link.addEventListener("click", e => {
+            e.preventDefault();
+            const id = parseInt(link.dataset.breachId);
+            const row = breachData.find(b => b.id === id);
+            if (row) openEditModal(row);
+        });
+    });
     tbody.querySelectorAll(".breach-name-link").forEach(link => {
         link.addEventListener("click", e => {
             e.preventDefault();
@@ -306,12 +358,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         e.preventDefault();
         const modal = document.getElementById("modal-create-breach");
         const formData = {
-            name:         modal.querySelector('[name="addBreachVictim"]')?.value?.trim() ?? "",
+            name: modal.querySelector('[name="addBreachVictim"]')?.value?.trim() ?? "",
             threat_actor: modal.querySelector('[name="addBreachThreatActor"]')?.value?.trim() ?? "",
             record_count: modal.querySelector('[name="addBreachCount"]')?.value?.trim() ?? "",
-            type:         modal.querySelector('[name="addBreachType"]')?.value?.trim() ?? "",
-            ingested:     modal.querySelector('[name="addBreachIngested"]')?.value ?? "Pending",
+            type: modal.querySelector('[name="addBreachType"]')?.value?.trim() ?? "",
+            ingested: modal.querySelector('[name="addBreachIngested"]')?.value ?? "Pending",
         };
         await onCreateBreach(formData);
+    });
+
+    document.getElementById("btn-edit-breach-submit")?.addEventListener("click", async e => {
+        e.preventDefault();
+        const modalEl = document.getElementById("modal-edit-breach");
+        const id = parseInt(modalEl.dataset.breachId);
+        const original = JSON.parse(modalEl.dataset.originalRow ?? "{}");
+        const current = {
+            name: document.getElementById("modal-edit-name")?.value?.trim() ?? "",
+            threat_actor: document.getElementById("modal-edit-actor")?.value?.trim() ?? "",
+            record_count: document.getElementById("modal-edit-records")?.value?.trim() ?? "",
+            type: document.getElementById("modal-edit-type")?.value?.trim() ?? "",
+            ingested: document.getElementById("modal-edit-ingested")?.value ?? "Pending",
+        };
+        const changed = Object.fromEntries(
+            Object.entries(current).filter(([k, v]) => v !== (original[k] ?? ""))
+        );
+        if (Object.keys(changed).length === 0) {
+            bootstrap.Modal.getInstance(modalEl)?.hide();
+            return;
+        }
+        await onEditBreach(id, changed);
     });
 });

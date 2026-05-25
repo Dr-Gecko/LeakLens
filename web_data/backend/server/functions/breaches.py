@@ -121,3 +121,25 @@ async def pull_breaches():
         traceback.print_exc()
         return utils.format_response(data={}, status_code=500, reason="server_error")
 
+async def update_breach(request:Request):
+    try:
+        breach_database = config.get_config_value("database.breaches_db")
+        auth_token = request.headers.get("api-key")
+        request_data = await request.json()
+        required_role = 3
+        verified = await auth.verify_auth_role(auth_token)    
+        if verified[0]!=True: return verified[1] 
+        if verified[2]<required_role: return verified[1] 
+        update_fields = []
+        params = []
+        for item in request_data['fields']:
+            update_fields.append(f"`{item}` = %s")
+            params.append(request_data['fields'][item])
+        update_statement = f"""UPDATE breaches SET {', '.join(update_fields)} WHERE id = %s"""
+        print(update_statement,(*params,request_data['id']))
+        await database.execute(update_statement,(*params,request_data['id']),database=breach_database)
+        return utils.format_response(data={"answer":"updated table"})
+    except Exception as error:
+        print(error)
+        traceback.print_exc()
+        return utils.format_response(status_code=500,reason="server_error")
