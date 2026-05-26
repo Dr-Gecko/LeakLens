@@ -233,7 +233,6 @@ async function filterCards(query) {
     const q = query.trim();
     const activeTags = [...document.querySelectorAll('input[name="form-tags[]"]:checked')]
         .map(cb => cb.value);
-    console.log("Active tags:", activeTags);
     const limit = document.querySelector('input[name="breachsearchlimit"]').value;
     if (!q) { renderCards([]); return; }
 
@@ -241,7 +240,7 @@ async function filterCards(query) {
 
     const tagsToSearch = activeTags.length > 0
         ? activeTags
-        : cachedBreaches.map(b => b.name);
+        : cachedBreaches.filter(b => (b.ingested ?? "").toLowerCase() !== "no").map(b => b.name);
 
     const results = await Promise.all(tagsToSearch.map(name => fetchSearchResults(name, q, limit)));
     allResults = results.flat();

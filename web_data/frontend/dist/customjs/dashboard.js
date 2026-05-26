@@ -7,7 +7,11 @@ const STATS_MAX_AGE_MS = 60 * 60 * 1000;
 
 async function getTopStatsData() {
     try {
-        const response = await fetch("/api/breaches/stats");
+        const response = await fetch("/api/breaches/stats",{
+            headers: {
+                "API-KEY": Cookies.get("auth")
+            }
+        });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.status === "success") {
@@ -21,7 +25,12 @@ async function getTopStatsData() {
 }
 async function loadBreachBreakdown() {
     try {
-        const response = await fetch("/api/breaches/list");
+        const response = await fetch("/api/breaches/list",{
+            headers: {
+                "API-KEY": Cookies.get("auth")
+            }
+        }
+        );
         if (!response.ok) return null;
         const data = await response.json();
         if (data.status !== "success") return null;
@@ -32,7 +41,11 @@ async function loadBreachBreakdown() {
 }
 async function loadDockerStats() {
     try {
-        const response = await fetch("/api/server/stats");
+        const response = await fetch("/api/server/stats",{
+            headers: {
+                "API-KEY": Cookies.get("auth")
+            }
+        });
         if (!response.ok) return null;
         const data = await response.json();
         if (data.status !== "success") return null;

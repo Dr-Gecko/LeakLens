@@ -34,12 +34,9 @@ async def create_user(request:Request):
         user_insert_affected = await database.execute("INSERT INTO users (username, hash, role, rbac_id, user_avatar_path, last_login_ip) VALUES (%s, %s, %s, %s, %s, %s);", (username, password_hash, user_title, rbac_id, "/dist/img/default.png",request_ip))
         if user_insert_affected==1: return utils.format_response(reason=f"created user {username}")
         else: return utils.format_response(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except msqlerrors.IntegrityError as error: 
+    except msqlerrors.IntegrityError as error:
         if error.errno == 1062: return utils.format_response(reason="username already exists",status_code=status.HTTP_409_CONFLICT)
-    except Exception as error: 
-        print(error)
-        print(traceback.format_exc())
-        return utils.format_response(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception: return utils.format_response(reason="failed to create user",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
 async def login_user(request:Request):
@@ -108,9 +105,7 @@ async def create_api_token(request:Request):
         params=(api_name,api_uuid,verified[3],verified[1],verified[2],0,new_auth_token,expire_time)
         updated_status = await database.execute(insert_statement,params=params)
         if updated_status==1: return utils.format_response(data={"token": new_auth_token})
-    except Exception as error: 
-        print(error)
-        return utils.format_response(reason="failed to create api token",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception: return utils.format_response(reason="failed to create api token",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 async def list_all_tokens(request:Request):
     try:
@@ -119,9 +114,7 @@ async def list_all_tokens(request:Request):
         if verified[0]!=True:return False,utils.format_response({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
         tokens=await database.fetch_all("select `name`, `uuid`, auth_token_expire, uses from api_key where username = %s",params=(verified[1],))
         return utils.format_response(data={"tokens": tokens})
-    except Exception as error: 
-        print(error)
-        return utils.format_response(reason="failed to create api token",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception: return utils.format_response(reason="failed to create api token",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 async def delete_api_token(request:Request):
     try:
@@ -133,8 +126,7 @@ async def delete_api_token(request:Request):
         affected = await database.execute("DELETE FROM api_key WHERE uuid = %s AND username = %s", (token_uuid, verified[1]))
         if affected > 0: return utils.format_response(reason="token revoked")
         else: return utils.format_response(reason="token not found",status_code=status.HTTP_404_NOT_FOUND)
-    except Exception as error:
-        print(error)
+    except Exception:
         return utils.format_response(reason="failed to revoke token",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 async def _update_user_column(user_id, column, data):
@@ -159,13 +151,12 @@ async def self_update(request:Request):
             password_hasher = PasswordHasher()
             password_hash = password_hasher.hash(new_data)
             new_data=password_hash
-            column_to_edit="hash"   
+            column_to_edit="hash"  
         updated_affected_rows = await database.execute(f"UPDATE users SET `{column_to_edit}` = %s WHERE user_id = %s;", (new_data, verified_user[3]))
         if updated_affected_rows > 0: return utils.format_response(reason=f"successfully updated colum: {column_to_edit} for user: {user_to_edit}")
         else: return utils.format_response(reason="internal error",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except TypeError: return utils.format_response(reason="API key invalid",status_code=status.HTTP_401_UNAUTHORIZED)
-    except Exception as error: 
-        print(error)
+    except Exception: 
         return utils.format_response(reason="failed",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)   
     
 async def update_user(request:Request):
@@ -196,8 +187,7 @@ async def get_user_info(request:Request):
         userInfo = await database.fetch_one("SELECT username, user_id, role, user_avatar_path FROM users WHERE user_id = %s",(verified_user[3],))
         return utils.format_response({"user_info":userInfo})
     except TypeError: return utils.format_response(reason="API key invalid",status_code=status.HTTP_401_UNAUTHORIZED)
-    except Exception: 
-        return utils.format_response(reason="failed",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception: return utils.format_response(reason="failed",status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 async def get_users_public(request:Request):
     try:
@@ -220,34 +210,25 @@ async def delete_user(request:Request):
         auth_token = request.headers.get("api-key")
         verified = await verify_auth_role(auth_token)   
         userToDelete = json_data['user']
-        if verified[0]!=True:
-            return False,utils.format_response({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
-        if verified[2]<required_role:
-            return False,utils.format_response({"response":"invalid permissions"},status_code=status.HTTP_401_UNAUTHORIZED)
+        if verified[0]!=True: return False,utils.format_response({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
+        if verified[2]<required_role: return False,utils.format_response({"response":"invalid permissions"},status_code=status.HTTP_401_UNAUTHORIZED)
         affected_rows=await database.execute("DELETE FROM users WHERE username = %s;",(userToDelete,))
-        if affected_rows > 0:
-            return utils.format_response({"response":f"deleted {userToDelete}"})
-        else:
-            return utils.format_response({"response":"internal error"},status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except TypeError:
-        return False,utils.format_response({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
-    except Exception as error:
-        return False,utils.format_response({"response":"failed"},status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if affected_rows > 0: return utils.format_response({"response":f"deleted {userToDelete}"})
+        else: return utils.format_response({"response":"internal error"},status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except TypeError: return False,utils.format_response({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
+    except Exception: return False,utils.format_response({"response":"failed"},status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 async def update_avatar(request:Request, uploadedFile : UploadFile):
     try:
         auth_token = request.headers.get("api-key")
         verified = await verify_auth_role(auth_token)      
-        if verified[0]!=True: 
-            return verified[1] 
+        if verified[0]!=True: return verified[1] 
         with open(f"/app/avatars/{verified[1]}{os.path.splitext(uploadedFile.filename)[1]}", "wb") as buffer:
             buffer.write(await uploadedFile.read())
         buffer.close()
         public_path = f"/static/avatars/useruploaded/{verified[1]}{os.path.splitext(uploadedFile.filename)[1]}"
         await _update_user_column(verified[3], "user_avatar_path", public_path)
         return utils.format_response({"avatar_path": public_path})
-    except TypeError:
-        return False,utils.format_response({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
-    except Exception as error:
-        return False,utils.format_response({"response":"failed"},status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except TypeError: return False,utils.format_response({"response":"API key invalid"},status_code=status.HTTP_401_UNAUTHORIZED)
+    except Exception: return False,utils.format_response({"response":"failed"},status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
         

@@ -38,3 +38,13 @@ CREATE TABLE users (
     last_login_ip VARCHAR(255) NOT NULL
     );
 
+CREATE TABLE api_key (
+    name VARCHAR(32) NOT NULL,
+    uuid VARCHAR(64) NOT NULL UNIQUE,
+    user_id INT NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    rbac_id INT NOT NULL,
+    uses INT,
+    auth_token VARCHAR(255) NULL,
+    auth_token_expire TIMESTAMP NULL DEFAULT NULL
+);

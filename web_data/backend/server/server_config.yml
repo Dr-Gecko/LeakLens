@@ -7,7 +7,7 @@ database:
   backend_db: backend
 api:
   name: LeakLense
-  business_id: test
+  business_id: test2
   location: test
   containers_to_monitor:
   - nginx_server

@@ -12,6 +12,41 @@ const stringToColor = (str) => {
   }
   return c
 }
+function timeDifference(current, previous) {
+
+    var msPerMinute = 60 * 1000;
+    var msPerHour = msPerMinute * 60;
+    var msPerDay = msPerHour * 24;
+    var msPerMonth = msPerDay * 30;
+    var msPerYear = msPerDay * 365;
+
+    var elapsed = current - previous;
+
+    if (elapsed < msPerMinute) {
+         return Math.round(elapsed/1000) + ' seconds ago';   
+    }
+
+    else if (elapsed < msPerHour) {
+         return Math.round(elapsed/msPerMinute) + ' minutes ago';   
+    }
+
+    else if (elapsed < msPerDay ) {
+         return Math.round(elapsed/msPerHour ) + ' hours ago';   
+    }
+
+    else if (elapsed < msPerMonth) {
+        return 'approximately ' + Math.round(elapsed/msPerDay) + ' days ago';   
+    }
+
+    else if (elapsed < msPerYear) {
+        return 'approximately ' + Math.round(elapsed/msPerMonth) + ' months ago';   
+    }
+
+    else {
+        return 'approximately ' + Math.round(elapsed/msPerYear ) + ' years ago';   
+    }
+}
+
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
 
@@ -53,7 +88,7 @@ function update_profile_picture() {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     const path = userData.user_avatar_path;
     const bg = path ? `url('${path}')` : "url('/dist/img/default.png')";
-    for (const id of ["setting_pfp", "avatar"]) {
+    for (const id of ["settings-avatar", "avatar"]) {
         const el = document.getElementById(id);
         if (el) el.style.backgroundImage = bg;
     }
@@ -70,9 +105,11 @@ function loadUserData() {
     setText("user_role", userData.role);
     update_profile_picture();
 }
+function generateSLT(authToken){
 
+}
 document.addEventListener("DOMContentLoaded", async () => {
-    if (!DEBUG && !localStorage.getItem("logged_in")) {
+    if (!DEBUG && !Cookies.get("auth")) {
         window.location.href = "/sign-in";
         return;
     }

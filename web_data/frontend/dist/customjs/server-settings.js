@@ -73,7 +73,7 @@ function reloadRecordsCount() {
     bar.setAttribute("aria-valuenow", 0);
     bar.style.visibility = "visible";
     bardiv.style.visibility = "visible";
-    const source = new EventSource("/api/breaches/reload");
+    const source = new EventSource(`/api/breaches/reload?slt=${Cookies.get("auth")}`);
 
     source.onmessage = (event) => {
         const data = JSON.parse(event.data);

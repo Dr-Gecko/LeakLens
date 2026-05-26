@@ -34,10 +34,8 @@ async def reload_count_stream(request: Request,token):
             await asyncio.sleep(0.1)
         yield f"data: {json.dumps({'status': 'finished', 'complete': True, 'progress': 100})}\n\n"
     except asyncio.CancelledError:
-        print("Stream cancelled")
         raise
-    except Exception as error:
-        print(error)
+    except Exception:
         yield f"data: {json.dumps({'status': 'error', 'reason': 'failed to reload counts'})}\n\n"
     
     
@@ -54,9 +52,7 @@ async def create_breach(request:Request):
         values = (name.title(),threat_actor,records,ingested,type.title(),table_data[1],verified[1])
         await database.execute(sql,params=values,database=breach_database)
         return utils.format_response(data={"answer":"created table"})
-    except Exception as error:
-        print(error)
-        traceback.print_exc()
+    except Exception:
         return utils.format_response(status_code=500,reason="server_error")
 
 async def search_all_columns(request:Request,table_name: str, search_value: str, limit: int = 100, search_field: str = None):
@@ -64,7 +60,6 @@ async def search_all_columns(request:Request,table_name: str, search_value: str,
         auth_token = request.headers.get("api-key")
         verified = await auth.verify_auth_role(auth_token)    
         if verified[0]!=True: return verified[1] 
-        
         breach_database = config.get_config_value("database.breaches_db")
         columns = await database.fetch_all("""SELECT column_name FROM information_schema.columns WHERE table_schema = %s AND table_name = %s """,(breach_database, table_name),database="information_schema")
         if not columns: return utils.format_response(data=[],status_code=404,reason="table_not_found")
@@ -89,8 +84,7 @@ async def search_all_columns(request:Request,table_name: str, search_value: str,
             return row
         breach_meta = utils.clean_json(dict(breach_info)) if breach_info else {"name": table_name}
         return utils.format_response(data={"breach_data": breach_meta, "entries": utils.clean_json([parse_extra(dict(row)) for row in rows])})
-    except Exception as error: 
-        traceback.print_exc()
+    except Exception:
         return utils.format_response(status_code=500,reason="server_error")
 
 
@@ -98,8 +92,7 @@ async def _pull_stats_data_from_db():
     breach_database = config.get_config_value("database.breaches_db")
     try:
         return sum([(await database.fetch_one(f"select count(*) from {breach}", database=breach_database))['count(*)'] for breach in [table['table_name'] for table in await database.fetch_all("select table_name from breaches", database=breach_database)]])
-    except Exception as error:
-        print(error)
+    except Exception:
         pass
 
 async def pull_stats_data(request:Request):
@@ -112,7 +105,7 @@ async def pull_stats_data(request:Request):
         breaches = await database.fetch_one("select count(*) from breaches",database=breach_database)
         stats={"total_entries":record,"breaches":breaches['count(*)']}
         return utils.format_response(data=stats)
-    except Exception as error:
+    except Exception:
         return utils.format_response(status_code=500, reason="server_error")
 
 async def pull_breaches(request:Request):
@@ -124,9 +117,7 @@ async def pull_breaches(request:Request):
         query = "SELECT id, name, threat_actor, date_added, record_count, ingested, type FROM breaches;"
         rows = await database.fetch_all(query, database=breach_database)
         return utils.format_response(data=utils.clean_json(rows))
-    except Exception as error:
-        print(error)
-        traceback.print_exc()
+    except Exception:
         return utils.format_response(data={}, status_code=500, reason="server_error")
 
 async def update_breach(request:Request):
@@ -144,10 +135,7 @@ async def update_breach(request:Request):
             update_fields.append(f"`{item}` = %s")
             params.append(request_data['fields'][item])
         update_statement = f"""UPDATE breaches SET {', '.join(update_fields)} WHERE id = %s"""
-        print(update_statement,(*params,request_data['id']))
         await database.execute(update_statement,(*params,request_data['id']),database=breach_database)
         return utils.format_response(data={"answer":"updated table"})
-    except Exception as error:
-        print(error)
-        traceback.print_exc()
+    except Exception:
         return utils.format_response(status_code=500,reason="server_error")
