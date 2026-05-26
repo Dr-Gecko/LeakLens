@@ -24,9 +24,8 @@ async def edit_breach(request: Request):
     return await breach.update_breach(request)
 
 @router.get("/reload")
-async def reload_breach_count(request: Request,slt):
-    print(slt)
+async def reload_breach_count(request: Request):
     return StreamingResponse(
-        breach.reload_count_stream(request,slt),
+        breach.reload_count_stream(request),
         media_type="text/event-stream"
     )

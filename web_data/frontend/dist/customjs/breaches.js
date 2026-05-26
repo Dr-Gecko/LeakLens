@@ -4,7 +4,7 @@ const tableState = {
     sortCol: "id",
     sortDir: "asc",
     page: 1,
-    pageSize: 8,
+    pageSize: 15,
 };
 
 let breachData = [];

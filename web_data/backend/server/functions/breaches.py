@@ -9,15 +9,16 @@ import functions.helpers.utils as utils
 import functions.helpers.database as database
 from functions.helpers import config as config
 
-async def reload_count_stream(request: Request,token):
+async def reload_count_stream(request: Request):
     breach_database = config.get_config_value("database.breaches_db")
-    verified = await auth.verify_auth_role(token)
+    verified = await auth.verify_auth_role(request.headers.get("api-key"))
     if not verified[0]:
         yield f"data: {json.dumps({'status': 'error', 'reason': 'API key invalid', 'progress': 0})}\n\n"
         return
     try:
         tables = await database.fetch_all("SELECT table_name FROM breaches WHERE table_name IS NOT NULL",database=breach_database)
         total_tables = len(tables)
+        print(tables)
         if total_tables == 0:
             yield f"data: {json.dumps({'status': 'finished', 'complete': True, 'progress': 100})}\n\n"
             return

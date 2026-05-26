@@ -66,31 +66,43 @@ async function loadServerSettings() {
         console.log(_)
     }
 } 
-function reloadRecordsCount() {
+async function reloadRecordsCount() {
     const bar = document.getElementById("progress-bar");
     const bardiv = document.getElementById("bar-div");
     bar.style.width = "0%";
     bar.setAttribute("aria-valuenow", 0);
     bar.style.visibility = "visible";
     bardiv.style.visibility = "visible";
-    const source = new EventSource(`/api/breaches/reload?slt=${Cookies.get("auth")}`);
-
-    source.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        const pct = Math.round(data.progress);
-        bar.style.width = pct + "%";
-        bar.setAttribute("aria-valuenow", pct);
-        if (data.complete) {
-            source.close();
-            bar.style.visibility = "hidden";
-            bardiv.style.visibility = "hidden";
+    try {
+        const response = await fetch("/api/breaches/reload", {
+            headers: { "API-KEY": Cookies.get("auth") }
+        });
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith("data: ")) continue;
+                const data = JSON.parse(line.slice(6));
+                const pct = Math.round(data.progress);
+                bar.style.width = pct + "%";
+                bar.setAttribute("aria-valuenow", pct);
+                if (data.complete) {
+                    bar.style.visibility = "hidden";
+                    bardiv.style.visibility = "hidden";
+                }
+            }
         }
-    };
-    source.onerror = () => {
-        source.close();
+        localStorage.removeItem("breaches")
+    } catch (_) {
         bar.style.visibility = "hidden";
         bardiv.style.visibility = "hidden";
-    };
+    }
 }
 document.addEventListener("DOMContentLoaded", () => {
     loadServerSettings();

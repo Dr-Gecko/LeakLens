@@ -41,10 +41,19 @@ function createCard(item, i) {
         .map(k => [k, entryData[k]])
         .filter(([, v]) => v !== null && v !== undefined && v !== '');
 
+    const ADDRESS_KEYS = /addr|address|street|city|state|location|zip|postal/i;
+    const renderValue = (v, k = '') => {
+        if (v == null || v === '') return '—';
+        if (ADDRESS_KEYS.test(k)) return String(v);
+        const parts = String(v).split(',').map(s => s.trim()).filter(Boolean);
+        if (parts.length > 1)
+            return `<ul class="mb-0 ps-3">${parts.map(item => `<li>${item}</li>`).join('')}</ul>`;
+        return parts[0] ?? '—';
+    };
     const renderField = ([k, v]) => `
         <div class="mb-3">
-            <div class="subheader">${k}</div>
-            <div>${v ?? '—'}</div>
+            <div class="subheader">${k.replace(/_/g, ' ')}</div>
+            <div>${renderValue(v, k)}</div>
         </div>`;
 
     const extraFields = extra && typeof extra === 'object' ? Object.entries(extra) : [];
