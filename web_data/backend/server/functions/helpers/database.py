@@ -1,29 +1,30 @@
 import asyncio
-import os
-from typing import Any, Sequence
-
 import mysql.connector
-from dotenv import load_dotenv
+from typing import Any, Sequence
+from functions.helpers.config import load_config
 
-load_dotenv()
 
+def _require_config(config: dict, path: str):
+    value = config
 
-def _require_env(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise RuntimeError(f"Missing required environment variable: {name}")
+    for key in path.split("."):
+        value = value.get(key)
+
+        if value is None:
+            raise RuntimeError(f"Missing required config value: {path}")
+
     return value
 
-
 def make_connection(database: str | None = None):
-    return mysql.connector.connect(
-        host=_require_env("mysql_host"),
-        port=int(os.getenv("sql_port", "3306")),
-        user=_require_env("mysql_user"),
-        password=_require_env("mysql_password"),
-        database=database or os.getenv("mysql_backend_db"),
-    )
+    config = load_config()
 
+    return mysql.connector.connect(
+        host=_require_config(config, "database.host"),
+        port=int(_require_config(config, "database.port")),
+        user=_require_config(config, "database.user"),
+        password=_require_config(config, "database.password"),
+        database=database or _require_config(config, "database.backend_db"),
+    )
 
 def close_connection(connection: Any) -> None:
     if connection and connection.is_connected():

@@ -3,8 +3,15 @@
 venv
 __pycache__
 
-# Actual LeakLense Ignores
+# Actual LeakLens Ignores
 data
 EXAMPLE_CHANGELOG.md
 dev/
 *test*.py
+tests/
+avatars/
+ingesters
+.claude
+server_config.yml
+dev-setup.sh
+create_changelog_entry.sh
