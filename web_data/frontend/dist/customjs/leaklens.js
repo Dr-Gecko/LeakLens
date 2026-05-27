@@ -54,6 +54,10 @@ function formatPhoneNumber(phoneNumberString) {
   }
   return null;
 }
+function failedAuth(){
+    localStorage.clear()
+    window.location = '/sign-in'
+}
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
 
@@ -71,10 +75,13 @@ async function getUserInfo() {
             headers: { "API-KEY": Cookies.get("auth") }
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) 
+            if (response.status==401){
+                failedAuth()
+            }
+            return null;
 
         const data = await response.json();
-
         if (data.status === "success") {
             const userData = {
                 age: Date.now(),
@@ -84,7 +91,6 @@ async function getUserInfo() {
             localStorage.setItem("user", JSON.stringify(userData));
             return userData;
         }
-
         return null;
     } catch (error) {
         console.error("Request failed:", error);

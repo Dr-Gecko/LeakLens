@@ -31,7 +31,7 @@ async function saveServerSettings() {
         );
         const anyUnauth = results.some(r => r.status === 401);
         if (anyUnauth) {
-            throw_alert("Invalid API Key", "error");
+            failedAuth()
             window.location.href = "/sign-in";
             return;
         }
@@ -51,7 +51,11 @@ async function loadServerSettings() {
         const response = await fetch("/api/server/config", {
             headers: { "API-KEY": Cookies.get("auth") }
         });
-        if (response.status === 401) { window.location.href = "/sign-in"; return; }
+        if (!response.ok) 
+            if (response.status==401){
+                failedAuth()
+            }
+            return null;
         if (!response.ok) return;
         const config = await response.json();
         for (const { id, parent, child } of FIELD_MAP) {

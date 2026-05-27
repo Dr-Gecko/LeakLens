@@ -12,7 +12,11 @@ async function getTopStatsData() {
                 "API-KEY": Cookies.get("auth")
             }
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) 
+            if (response.status==401){
+                failedAuth()
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.status === "success") {
             return data.data;
@@ -31,7 +35,11 @@ async function loadBreachBreakdown() {
             }
         }
         );
-        if (!response.ok) return null;
+        if (!response.ok) 
+            if (response.status==401){
+                failedAuth()
+            }
+            return null;
         const data = await response.json();
         if (data.status !== "success") return null;
         return data.data
@@ -46,7 +54,11 @@ async function loadDockerStats() {
                 "API-KEY": Cookies.get("auth")
             }
         });
-        if (!response.ok) return null;
+        if (!response.ok) 
+            if (response.status==401){
+                failedAuth()
+            }
+            return null;
         const data = await response.json();
         if (data.status !== "success") return null;
         return data.data

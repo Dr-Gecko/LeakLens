@@ -59,6 +59,9 @@ async function getBreachList() {
         });
 
         if (!response.ok) {
+            if (response.status==401){
+                failedAuth()
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 

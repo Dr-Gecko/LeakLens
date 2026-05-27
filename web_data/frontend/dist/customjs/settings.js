@@ -190,8 +190,8 @@ async function revokeAPIToken(uuid) {
             await loadAPITokens();
             throw_alert("Token revoked", "success");
         } else if (response.status === 401) {
-            throw_alert("Invalid API Key", "error");
-            window.location.href = "/sign-in";
+            failedAuth()
+            return;
         } else {
             throw_alert("Revoke failed", "error");
         }

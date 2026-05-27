@@ -6,13 +6,8 @@ async function getUsersData() {
                 "API-KEY": Cookies.get("auth")
             }
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) if (response.status==401){failedAuth()}return;
         const data = await response.json();
-
         return data.status === "success"
             ? data.data.users
             : null;
