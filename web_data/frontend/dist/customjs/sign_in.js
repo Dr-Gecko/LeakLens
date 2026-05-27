@@ -21,11 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (response.status==200) {
-                localStorage.setItem("logged_in",true)
                 localStorage.setItem("user", JSON.stringify(data.data.user_data));
                 const date = new Date(JSON.stringify(data.data.expire_time).replace(" ", "T"));
                 Cookies.set('auth',data.data.token, { expires: date })
                 window.location.href = "/"; 
+                localStorage.removeItem("dashboardData")
+                localStorage.removeItem("breaches")
+                localStorage.removeItem("leakLensData")
             } else {
                 Swal.fire({
                     title: "Login Error",
