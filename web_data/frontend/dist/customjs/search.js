@@ -414,23 +414,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const loadAllCheckbox = document.getElementById('load-all-checkbox');
     const limitInput = document.getElementById('breachsearchlimit');
-    loadAllCheckbox.addEventListener('change', async e => {
+    loadAllCheckbox.checked = true;
+    limitInput.disabled = true;
+    loadAllCheckbox.addEventListener('change', e => {
         if (e.target.checked) {
-            e.target.checked = false;
-            const result = await Swal.fire({
-                title: 'Load all entries?',
-                text: 'This will retrieve every matching record with no limit. Large breaches may return tens of thousands of results and could be slow.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, load all',
-                cancelButtonText: 'Cancel',
-                background: 'var(--tblr-bg-surface)',
-                color: 'var(--tblr-body-color)',
-            });
-            if (result.isConfirmed) {
-                e.target.checked = true;
-                limitInput.disabled = true;
-            }
+            limitInput.disabled = true;
         } else {
             limitInput.disabled = false;
         }
