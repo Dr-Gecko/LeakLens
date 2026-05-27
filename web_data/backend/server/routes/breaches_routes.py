@@ -24,6 +24,10 @@ async def create_breach(request: Request):
 async def edit_breach(request: Request):
     return await breach.update_breach(request)
 
+@router.post('/delete')
+async def delete_breach(request: Request):
+    return await breach.delete_breach(request)
+
 @router.get("/reload")
 async def reload_breach_count(request: Request):
     return StreamingResponse(

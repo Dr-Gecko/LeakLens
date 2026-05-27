@@ -61,6 +61,22 @@ async def create_breach(request:Request):
         traceback.print_exc()
         return utils.format_response(status_code=500,reason="server_error")
 
+async def delete_breach(request: Request):
+    try:
+        auth_token = request.headers.get("api-key")
+        verified = await auth.verify_auth_role(auth_token)
+        if verified[0] != True: return verified[1]
+        breach_database = config.get_config_value("database.breaches_db")
+        breach_id = (await request.json())["id"]
+        row = await database.fetch_one("SELECT table_name FROM breaches WHERE id = %s", (breach_id,), database=breach_database)
+        if not row: return utils.format_response(status_code=404, reason="not_found")
+        await database.execute(f"DROP TABLE IF EXISTS `{row['table_name']}`", database=breach_database)
+        await database.execute("DELETE FROM breaches WHERE id = %s", params=(breach_id,), database=breach_database)
+        return utils.format_response(data={"deleted": breach_id})
+    except Exception:
+        traceback.print_exc()
+        return utils.format_response(status_code=500, reason="server_error")
+
 async def search_all_columns(request:Request,table_name: str, search_value: list, limit: int = 100, search_field: list = None, offset: int = 0):
     try:
         auth_token = request.headers.get("api-key")
