@@ -1,5 +1,5 @@
 const DEBUG = false;
-const ONE_HOUR = 60 * 60 * 1000;
+const ONE_HOUR = 5 * 60 * 1000;
 const stringToColor = (str) => {
   let hash = 0;
   str.split('').forEach(char => {
@@ -112,8 +112,44 @@ function loadUserData() {
     setText("user_role", userData.role);
     update_profile_picture();
 }
-function generateSLT(authToken){
+function loadLeakLensData() {
+    const leakLensData = JSON.parse(localStorage.getItem("leakLensData") || "{}");
 
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value || "null";
+    };
+
+    setText("version", leakLensData.version);
+    document.getElementById("version").href=`/changelog#${leakLensData.version}`
+    update_profile_picture();
+}
+
+async function getServerInfo() {
+    try {
+        const response = await fetch("/api/server/info", {
+            headers: { "API-KEY": Cookies.get("auth") }
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            const leakLensData = {
+                age: Date.now(),
+                ...data.data
+            };
+
+            localStorage.setItem("leakLensData", JSON.stringify(leakLensData));
+            return leakLensData;
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Request failed:", error);
+        return null;
+    }
 }
 document.addEventListener("DOMContentLoaded", async () => {
     if (!DEBUG && !Cookies.get("auth")) {
@@ -128,4 +164,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (userData) loadUserData();
+
+    let leakLensData = JSON.parse(localStorage.getItem("leakLensData") || "{}");
+
+    if (!leakLensData.age || leakLensData.age < Date.now() - ONE_HOUR) {
+        leakLensData = await getServerInfo();
+    }
+
+    if (leakLensData) loadLeakLensData();
 });

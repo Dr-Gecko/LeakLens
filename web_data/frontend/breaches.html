@@ -32,7 +32,7 @@
 
 <body>
 	<script src="./dist/js/demo-theme.min.js"></script>
-	<script src="./dist/customjs/leaklens.js?v=1.0.45"></script>
+	<script src="./dist/customjs/leaklens.js?v=1.0.68"></script>
 	<script src="./dist/customjs/breaches.js?v=0.0.88"></script>
 	<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
@@ -201,7 +201,7 @@
 									</svg>
 								</a>
 							</div>
-							
+
 							<div class="modal modal-blur fade" id="modal-create-breach" tabindex="-1" role="dialog"
 								aria-hidden="true">
 								<div class="modal-dialog modal-lg" role="document">
@@ -266,7 +266,7 @@
 									</div>
 								</div>
 							</div>
-						
+
 						</div>
 					</div>
 				</div>
@@ -320,7 +320,8 @@
 							</div>
 							<div class="mb-3">
 								<label class="form-label">Threat Actor</label>
-								<input type="text" class="form-control" id="modal-edit-actor" name="addBreachThreatActor">
+								<input type="text" class="form-control" id="modal-edit-actor"
+									name="addBreachThreatActor">
 							</div>
 							<div class="mb-3">
 								<label class="form-label">Record Count</label>
@@ -338,8 +339,8 @@
 								<div class="flex-fill">
 									<div class="mb-3">
 										<label class="form-label">Type</label>
-										<input type="text" class="form-control" id="modal-edit-type" name="addBreachType"
-											placeholder="salesforce dump, full dump, PII only">
+										<input type="text" class="form-control" id="modal-edit-type"
+											name="addBreachType" placeholder="salesforce dump, full dump, PII only">
 									</div>
 								</div>
 							</div>
@@ -349,7 +350,14 @@
 								Cancel
 							</a>
 							<a href="#" id="btn-edit-breach-submit" class="btn btn-primary btn-5 ms-auto">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a1 1 0 0 1 -1 1h-1a1 1 0 0 0 -1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1 -1v-1a1 1 0 0 1 2 0v1a3 3 0 0 1 -3 3h-9a3 3 0 0 1 -3 -3v-9a3 3 0 0 1 3 -3h1a1 1 0 0 1 1 1" /><path d="M14.596 5.011l4.392 4.392l-6.28 6.303a1 1 0 0 1 -.708 .294h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 .294 -.708zm6.496 -2.103a3.097 3.097 0 0 1 .165 4.203l-.164 .18l-.693 .694l-4.387 -4.387l.695 -.69a3.1 3.1 0 0 1 4.384 0" /></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+									fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-edit">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path
+										d="M8 7a1 1 0 0 1 -1 1h-1a1 1 0 0 0 -1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1 -1v-1a1 1 0 0 1 2 0v1a3 3 0 0 1 -3 3h-9a3 3 0 0 1 -3 -3v-9a3 3 0 0 1 3 -3h1a1 1 0 0 1 1 1" />
+									<path
+										d="M14.596 5.011l4.392 4.392l-6.28 6.303a1 1 0 0 1 -.708 .294h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 .294 -.708zm6.496 -2.103a3.097 3.097 0 0 1 .165 4.203l-.164 .18l-.693 .694l-4.387 -4.387l.695 -.69a3.1 3.1 0 0 1 4.384 0" />
+								</svg>
 								Edit breach
 							</a>
 						</div>
@@ -490,6 +498,9 @@
 									Copyright &copy; 2026
 									<a>DrGecko</a>.
 									All rights reserved.
+								</li>
+								<li class="list-inline-item">
+									<a class="link-secondary" rel="noopener" id="version"></a>
 								</li>
 							</ul>
 						</div>
