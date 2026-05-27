@@ -15,7 +15,7 @@ git commit -m "pushing to major update"
 git push
 # Merge dev into main
 git checkout main
-git pull origin main
+git pull --no-rebase origin main
 git merge dev --no-edit
 
 # Push main
