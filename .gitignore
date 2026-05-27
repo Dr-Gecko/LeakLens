@@ -12,3 +12,4 @@ ingesters
 server_config.yml
 dev-setup.sh
 create_changelog_entry.sh
+create_release.sh
