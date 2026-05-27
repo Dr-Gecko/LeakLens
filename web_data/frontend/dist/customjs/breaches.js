@@ -199,7 +199,7 @@ function renderBreachTable() {
                               <button class="btn dropdown-toggle align-text-top" data-bs-boundary="viewport" data-bs-toggle="dropdown">Actions</button>
                               <div class="dropdown-menu dropdown-menu-end">
                                 <a class="dropdown-item breach-edit" data-breach-id="${row.id}">Edit</a>
-                                <a class="dropdown-item">Delete</a>
+                                <a class="dropdown-item breach-delete" data-breach-id="${row.id}" data-breach-name="${row.name}">Delete</a>
                               </div>
                           </td>
         </tr>
@@ -210,6 +210,37 @@ function renderBreachTable() {
             const id = parseInt(link.dataset.breachId);
             const row = breachData.find(b => b.id === id);
             if (row) openEditModal(row);
+        });
+    });
+    tbody.querySelectorAll(".breach-delete").forEach(link => {
+        link.addEventListener("click", async e => {
+            e.preventDefault();
+            const id = parseInt(link.dataset.breachId);
+            const name = link.dataset.breachName;
+            const result = await Swal.fire({
+                title: `Delete "${name}"?`,
+                text: "This will permanently delete the breach and all its data. This cannot be undone.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Delete",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "var(--tblr-danger)",
+                background: "var(--tblr-bg-surface)",
+                color: "var(--tblr-body-color)",
+            });
+            if (!result.isConfirmed) return;
+            const resp = await fetch("/api/breaches/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "API-KEY": Cookies.get("auth") },
+                body: JSON.stringify({ id }),
+            });
+            const data = await resp.json();
+            if (data.status === "success") {
+                await Swal.fire({ title: "Deleted", icon: "success", timer: 1500, showConfirmButton: false, background: "var(--tblr-bg-surface)", color: "var(--tblr-body-color)" });
+                loadBreaches();
+            } else {
+                Swal.fire({ title: "Error", text: "Failed to delete breach.", icon: "error", background: "var(--tblr-bg-surface)", color: "var(--tblr-body-color)" });
+            }
         });
     });
     tbody.querySelectorAll(".breach-name-link").forEach(link => {
