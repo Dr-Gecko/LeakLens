@@ -1,0 +1,8 @@
+.cluster-label {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 1px 3px black;
+}

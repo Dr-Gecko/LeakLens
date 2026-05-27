@@ -1,45 +1,25 @@
+---
+sidebar_position: 1
+slug: /
+---
 
-# LeakLense
+# LeakLens
 
-LeakLense is a data visualization tool specifically target towards data breaches. It helps you view the data you have related to breaches, query specific information, build maps, assist with OSINT/HUMINT
-## Acknowledgements
+![Dashboard](1.png)
 
- - [Tabler](https://github.com/tabler/tabler)
-## Run Locally
+LeakLens is a self-hosted data analysis platform. It lets you ingest, browse and search data through a web interface. It includes RBAC, authentication, container monitoring and a interactive dashboard.
 
-Clone the project
-```bash
-  git clone https://github.com/Dr-Gecko/LeakLense.git
-```
+## What it does
 
+- **Stores data** in per-breach MariaDB tables with structured fields for PII, socials, and extra metadata
+- **Search across any field** in any breach table using a flexible query interface with keyword searching
+- **Dashboard** shows live record counts, breach breakdowns, and container health
+- **Server configuration** editable through the UI without having to touch files
 
+## Stack
 
-
-### Docker
-Go to the project directory
-
-```bash
-  cd LeakLense/Dockerfiles
-```
-
-Run Setup script
-
-```bash
-  ./setup.sh
-```
-
-Start LeakLense
-
-```bash
-  docker compose up -d
-```
-
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
-
-
-## Feedback
-
-Feature requests, bugs, security defects, etc should all be made into issues with the correct corresponding tags. 
+| Layer | Technology |
+|-------|-----------|
+| Backend | FastAPI |
+| Database | MariaDB |
+| Frontend | Tabler |
