@@ -7,8 +7,7 @@ if [ -z "$LATEST_VERSION" ]; then
     echo "Error: could not determine version from changelog.html"
     exit 1
 fi
-
-echo "Releasing v$LATEST_VERSION"
+echo "Releasing $LATEST_VERSION"
 git checkout dev
 git add .
 git commit -m "pushing to major update"
@@ -26,9 +25,9 @@ git tag -a "$LATEST_VERSION" -m "Version $LATEST_VERSION"
 git push origin "$LATEST_VERSION"
 
 # Create GitHub release
-gh release create "$LATEST_VERSION" --title "v$LATEST_VERSION" --generate-notes
+gh release create "$LATEST_VERSION" --title "$LATEST_VERSION" --generate-notes
 
 # Return to dev
 git checkout dev
 
-echo "Done — v$LATEST_VERSION released"
+echo "Done — $LATEST_VERSION released"
