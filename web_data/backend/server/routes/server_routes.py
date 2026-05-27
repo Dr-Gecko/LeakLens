@@ -12,6 +12,14 @@ async def get_config(request:Request):
     if verified[0]!=True: return verified[1] 
     return await server.return_config()
 
+@router.get("/info")
+async def get_config(request:Request):
+    auth_token = request.headers.get("api-key")
+    verified = await verify_auth_role(auth_token)    
+    if verified[0]!=True: return verified[1] 
+    return await server.leak_lens_info()
+
+
 @router.post("/config")
 async def edit_config(request: Request):
     return await server.edit_config(request)

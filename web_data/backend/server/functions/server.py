@@ -10,6 +10,10 @@ client = docker.DockerClient(base_url="unix://var/run/docker.sock")
 async def return_config():
     return config.load_config()
 
+async def leak_lens_info():
+    return utils.format_response(data={"version":config.get_config_value("api.version")})
+
+
 async def edit_config(request:Request):
     try:
         auth_token = request.headers.get("api-key")

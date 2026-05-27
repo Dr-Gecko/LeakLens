@@ -3,12 +3,13 @@ database:
   port: 3306
   user: gecko
   password: password
-  breaches_db: breaches
+  breaches_db: leaklense_data
   backend_db: backend
 api:
   name: LeakLens
   business_id: test
   location: test
+  version: 0.0.93
   containers_to_monitor:
   - nginx_server
   - fastapi_server
