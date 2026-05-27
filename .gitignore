@@ -1,9 +1,6 @@
-# Python and config ignores
 .env
 venv
 __pycache__
-
-# Actual LeakLens Ignores
 data
 EXAMPLE_CHANGELOG.md
 dev/
