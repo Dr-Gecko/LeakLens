@@ -2,6 +2,7 @@
 pwd=$(pwd)
 MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32 | tr -dc '[:alnum:]\n\r')
 MYSQL_LEAKLENS_PASSWORD=$(openssl rand -base64 32 | tr -dc '[:alnum:]\n\r')
+VERSION = $(cat .version)
 cat > web_data/backend/server/server_config.yml <<EOF
 database:
   host: mariadb
@@ -14,6 +15,7 @@ api:
   name: LeakLens
   business_id: test
   location: test
+  version: $VERSION
   containers_to_monitor:
   - nginx_server
   - fastapi_server
@@ -76,4 +78,3 @@ MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
 EOF
 cd Dockerfiles
 docker compose up -d
-echo "http://$(hostname -I | awk '{print $1}')/sign-up"

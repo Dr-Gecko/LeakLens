@@ -13,3 +13,6 @@ avatars/
 ingesters
 .claude
 server_config.yml
+changelog.html
+dev-setup.sh
+create_changelog_entry.sh
