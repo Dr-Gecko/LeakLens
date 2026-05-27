@@ -13,8 +13,8 @@ async def list_breaches(request:Request):
     return await breach.pull_breaches(request)
 
 @router.get("/search")
-async def search_breaches(request: Request, table_name: str, search_value: List[str] = Query(default=[]), search_field: List[str] = Query(default=[]), limit: int = 100, offset: int = 0):
-    return await breach.search_all_columns(request, table_name, search_value, search_field=search_field, limit=limit, offset=offset)
+async def search_breaches(request: Request, table_name: str, search_value: List[str] = Query(default=[]), search_field: List[str] = Query(default=[]), search_exact: List[str] = Query(default=[]), limit: int = 100, offset: int = 0):
+    return await breach.search_all_columns(request, table_name, search_value, search_field=search_field, search_exact=search_exact, limit=limit, offset=offset)
 
 @router.post('/create')
 async def create_breach(request: Request):

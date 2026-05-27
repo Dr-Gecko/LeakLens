@@ -272,8 +272,13 @@ function parseFieldTokens(q) {
         if (!m) continue;
         const field = m[1].toLowerCase();
         let value = m[2].trim();
+        let exact = false;
+        if (value.startsWith('"') && value.endsWith('"') && value.length >= 2) {
+            exact = true;
+            value = value.slice(1, -1);
+        }
         if (/phone|mobile|cell|fax/i.test(field)) value = value.replace(/\D/g, '');
-        tokens.push({ field, value });
+        tokens.push({ field, value, exact });
     }
     return tokens;
 }
@@ -283,9 +288,10 @@ async function fetchSearchResults(tableName, searchValue, limit, offset = 0) {
         const tokens = parseFieldTokens(searchValue);
         const params = new URLSearchParams({ table_name: tableName.toLowerCase().replace(" ", "_") });
         if (tokens.length > 0) {
-            for (const { field, value } of tokens) {
+            for (const { field, value, exact } of tokens) {
                 params.append("search_field", field);
                 params.append("search_value", value);
+                params.append("search_exact", exact ? "true" : "false");
             }
         } else {
             params.append("search_value", searchValue);

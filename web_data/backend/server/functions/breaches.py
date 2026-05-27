@@ -77,7 +77,7 @@ async def delete_breach(request: Request):
         traceback.print_exc()
         return utils.format_response(status_code=500, reason="server_error")
 
-async def search_all_columns(request:Request,table_name: str, search_value: list, limit: int = 100, search_field: list = None, offset: int = 0):
+async def search_all_columns(request:Request,table_name: str, search_value: list, limit: int = 100, search_field: list = None, search_exact: list = None, offset: int = 0):
     try:
         auth_token = request.headers.get("api-key")
         verified = await auth.verify_auth_role(auth_token)
@@ -90,17 +90,24 @@ async def search_all_columns(request:Request,table_name: str, search_value: list
         if search_field:
             conditions = []
             params = []
-            for sf, sv in zip(search_field, search_value):
+            for i, (sf, sv) in enumerate(zip(search_field, search_value)):
+                exact = search_exact and i < len(search_exact) and search_exact[i] == "true"
                 if '.' in sf:
                     json_col, json_path_key = sf.split('.', 1)
                     if json_col not in column_names or not re.match(r'^[\w.]+$', json_path_key):
                         return utils.format_response(data=[], status_code=400, reason="invalid_field")
-                    conditions.append(f"CAST(JSON_EXTRACT(`{json_col}`, '$.{json_path_key}') AS CHAR) LIKE %s")
+                    if exact:
+                        conditions.append(f"CAST(JSON_EXTRACT(`{json_col}`, '$.{json_path_key}') AS CHAR) = %s")
+                    else:
+                        conditions.append(f"CAST(JSON_EXTRACT(`{json_col}`, '$.{json_path_key}') AS CHAR) LIKE %s")
                 elif sf not in column_names:
                     return utils.format_response(data=[],status_code=400,reason="invalid_field")
                 else:
-                    conditions.append(f"CAST(`{sf}` AS CHAR) LIKE %s")
-                params.append(f"%{sv}%")
+                    if exact:
+                        conditions.append(f"CAST(`{sf}` AS CHAR) = %s")
+                    else:
+                        conditions.append(f"CAST(`{sf}` AS CHAR) LIKE %s")
+                params.append(sv if exact else f"%{sv}%")
             where_clause = " AND ".join(conditions)
         else:
             plain = search_value[0] if search_value else ""
