@@ -1,3 +1,4 @@
+import re
 import ast
 import time
 import json
@@ -60,25 +61,37 @@ async def create_breach(request:Request):
         traceback.print_exc()
         return utils.format_response(status_code=500,reason="server_error")
 
-async def search_all_columns(request:Request,table_name: str, search_value: str, limit: int = 100, search_field: str = None):
+async def search_all_columns(request:Request,table_name: str, search_value: list, limit: int = 100, search_field: list = None, offset: int = 0):
     try:
         auth_token = request.headers.get("api-key")
-        verified = await auth.verify_auth_role(auth_token)    
-        if verified[0]!=True: return verified[1] 
-        
+        verified = await auth.verify_auth_role(auth_token)
+        if verified[0]!=True: return verified[1]
+
         breach_database = config.get_config_value("database.breaches_db")
         columns = await database.fetch_all("""SELECT column_name FROM information_schema.columns WHERE table_schema = %s AND table_name = %s """,(breach_database, table_name),database="information_schema")
         if not columns: return utils.format_response(data=[],status_code=404,reason="table_not_found")
         column_names = [row["column_name"] for row in columns]
         if search_field:
-            if search_field not in column_names: return utils.format_response(data=[],status_code=400,reason="invalid_field")
-            where_clause = f"CAST(`{search_field}` AS CHAR) LIKE %s"
-            params = [f"%{search_value}%", limit]
+            conditions = []
+            params = []
+            for sf, sv in zip(search_field, search_value):
+                if '.' in sf:
+                    json_col, json_path_key = sf.split('.', 1)
+                    if json_col not in column_names or not re.match(r'^[\w.]+$', json_path_key):
+                        return utils.format_response(data=[], status_code=400, reason="invalid_field")
+                    conditions.append(f"CAST(JSON_EXTRACT(`{json_col}`, '$.{json_path_key}') AS CHAR) LIKE %s")
+                elif sf not in column_names:
+                    return utils.format_response(data=[],status_code=400,reason="invalid_field")
+                else:
+                    conditions.append(f"CAST(`{sf}` AS CHAR) LIKE %s")
+                params.append(f"%{sv}%")
+            where_clause = " AND ".join(conditions)
         else:
+            plain = search_value[0] if search_value else ""
             where_clause = " OR ".join([f"CAST(`{col}` AS CHAR) LIKE %s" for col in column_names])
-            params = [f"%{search_value}%"] * len(column_names)
-            params.append(limit)
-        query = f"""SELECT * FROM `{table_name}` WHERE {where_clause} LIMIT %s"""
+            params = [f"%{plain}%"] * len(column_names)
+        params.extend([limit, offset])
+        query = f"""SELECT * FROM `{table_name}` WHERE {where_clause} LIMIT %s OFFSET %s"""
         rows, breach_info = await asyncio.gather(database.fetch_all(query, tuple(params), database=breach_database), database.fetch_one("SELECT id, name, threat_actor, date_added, record_count FROM breaches WHERE LOWER(table_name) = %s",(table_name,),database=breach_database))
         def parse_extra(row):
             extra = row.get("extra")

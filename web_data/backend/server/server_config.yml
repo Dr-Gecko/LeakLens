@@ -3,11 +3,11 @@ database:
   port: 3306
   user: gecko
   password: password
-  breaches_db: leaklense_data
+  breaches_db: breaches
   backend_db: backend
 api:
-  name: LeakLense
-  business_id: test2
+  name: LeakLens
+  business_id: test
   location: test
   containers_to_monitor:
   - nginx_server

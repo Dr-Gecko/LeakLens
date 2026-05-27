@@ -32,8 +32,8 @@
 
 <body>
 	<script src="./dist/js/demo-theme.min.js"></script>
-	<script src="./dist/customjs/search.js?v=0.0.96" defer></script>
-	<script src="./dist/customjs/leaklens.js?v=1.0.44"></script>
+	<script src="./dist/customjs/search.js?v=0.0.102" defer></script>
+	<script src="./dist/customjs/leaklens.js?v=1.0.45"></script>
 	<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
@@ -205,7 +205,14 @@
 							<div class="subheader mb-2">Limit (Per breach not in total)</div>
 							<div class="mb-3">
 								<input type="text" class="form-control" name="breachsearchlimit" placeholder="100"
-									value="100">
+									value="100" id="breachsearchlimit">
+							</div>
+							<div class="mb-3">
+								<label class="form-check">
+									<input type="checkbox" class="form-check-input" id="load-all-checkbox">
+									<span class="form-check-label">Load all</span>
+								</label>
+								<div class="text-warning small mt-1">May return very large result sets</div>
 							</div>
 						</div>
 						<div class="col-md-9">
@@ -250,6 +257,7 @@
 	<!-- Tabler Core -->
 	<script src="./dist/js/tabler.min.js" defer></script>
 	<script src="./dist/js/demo.min.js" defer></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 
 </html>

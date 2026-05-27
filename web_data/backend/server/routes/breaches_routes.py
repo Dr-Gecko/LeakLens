@@ -1,6 +1,7 @@
 import functions.breaches as breach
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from fastapi.responses import StreamingResponse
+from typing import List
 router = APIRouter(prefix="/breaches", tags=["Leaklens"])
 
 @router.get("/stats")
@@ -12,8 +13,8 @@ async def list_breaches(request:Request):
     return await breach.pull_breaches(request)
 
 @router.get("/search")
-async def search_breaches(request: Request, table_name: str, search_value: str, search_field: str = None,limit:int = 100):
-    return await breach.search_all_columns(request,table_name, search_value, search_field=search_field,limit=limit)
+async def search_breaches(request: Request, table_name: str, search_value: List[str] = Query(default=[]), search_field: List[str] = Query(default=[]), limit: int = 100, offset: int = 0):
+    return await breach.search_all_columns(request, table_name, search_value, search_field=search_field, limit=limit, offset=offset)
 
 @router.post('/create')
 async def create_breach(request: Request):

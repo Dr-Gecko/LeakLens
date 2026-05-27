@@ -1,8 +1,86 @@
 let cachedBreaches = [];
 let allResults = [];
 let currentPage = 1;
+let searchGeneration = 0;
+let loadingMoreBreaches = 0;
 const PAGE_SIZE = 100;
 const SEARCH_KEYWORDS = ['name', 'uuid', 'id', 'pii', 'extra', 'socials'];
+
+function formatPhoneNumber(digits) {
+    if (digits.length === 10)
+        return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+    if (digits.length === 11 && digits[0] === '1')
+        return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+    return digits;
+}
+
+// Add entries here to handle new field types. `match` is tested against the field key name.
+const KEY_RENDERERS = [
+    {
+        match: /phone|mobile|cell|fax/i,
+        render: v => {
+            const parts = v.split(',').map(s => s.trim()).filter(Boolean);
+            const fmt = n => `${formatPhoneNumber(n.replace(/\D/g, ''))}`;
+            return parts.length > 1
+                ? `<ul class="mb-0 ps-3">${parts.map(n => `<li>${fmt(n)}</li>`).join('')}</ul>`
+                : fmt(parts[0]);
+        },
+    },
+    {
+        match: /email/i,
+        render: v => {
+            const parts = v.split(',').map(s => s.trim()).filter(Boolean);
+            const fmt = e => `${e}`;
+            return parts.length > 1
+                ? `<ul class="mb-0 ps-3">${parts.map(e => `<li>${fmt(e)}</li>`).join('')}</ul>`
+                : fmt(parts[0]);
+        },
+    },
+    {
+        match: /url|website|link/i,
+        render: v => {
+            const parts = v.split(',').map(s => s.trim()).filter(Boolean);
+            const fmt = u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`;
+            return parts.length > 1
+                ? `<ul class="mb-0 ps-3">${parts.map(u => `<li>${fmt(u)}</li>`).join('')}</ul>`
+                : fmt(parts[0]);
+        },
+    },
+    {
+        match: /date|dob|birth/i,
+        render: v => {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v.trim())) {
+                const [y, m, d] = v.trim().split('-').map(Number);
+                return new Date(y, m - 1, d).toLocaleDateString();
+            }
+            const d = new Date(v);
+            return isNaN(d.getTime()) ? v : d.toLocaleDateString();
+        },
+    },
+    {
+        match: /addr|address|street|city|state|location|zip|postal/i,
+        render: v => v,
+    },
+];
+
+function renderValue(v, k = '') {
+    if (v == null || v === '') return '—';
+    const s = String(v);
+    const renderer = KEY_RENDERERS.find(r => r.match.test(k));
+    if (renderer) return renderer.render(s);
+    const parts = s.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length > 1)
+        return `<ul class="mb-0 ps-3">${parts.map(p => `<li>${p}</li>`).join('')}</ul>`;
+    return parts[0] ?? '—';
+}
+
+function renderField([k, v]) {
+    return `
+        <div class="mb-3">
+            <div class="subheader">${k.replace(/_/g, ' ')}</div>
+            <div>${renderValue(v, k)}</div>
+        </div>`;
+}
 
 function showKeywordDropdown(input, items) {
     let dropdown = document.getElementById('keyword-dropdown');
@@ -22,7 +100,9 @@ function showKeywordDropdown(input, items) {
     dropdown.querySelectorAll('.keyword-option').forEach(opt => {
         opt.addEventListener('mousedown', e => {
             e.preventDefault();
-            input.value = opt.dataset.keyword + ':';
+            const parts = input.value.split(',');
+            parts[parts.length - 1] = opt.dataset.keyword + ':';
+            input.value = parts.join(',');
             hideKeywordDropdown();
             input.focus();
         });
@@ -40,21 +120,6 @@ function createCard(item, i) {
     const preview = ['name', 'id', 'uuid']
         .map(k => [k, entryData[k]])
         .filter(([, v]) => v !== null && v !== undefined && v !== '');
-
-    const ADDRESS_KEYS = /addr|address|street|city|state|location|zip|postal/i;
-    const renderValue = (v, k = '') => {
-        if (v == null || v === '') return '—';
-        if (ADDRESS_KEYS.test(k)) return String(v);
-        const parts = String(v).split(',').map(s => s.trim()).filter(Boolean);
-        if (parts.length > 1)
-            return `<ul class="mb-0 ps-3">${parts.map(item => `<li>${item}</li>`).join('')}</ul>`;
-        return parts[0] ?? '—';
-    };
-    const renderField = ([k, v]) => `
-        <div class="mb-3">
-            <div class="subheader">${k.replace(/_/g, ' ')}</div>
-            <div>${renderValue(v, k)}</div>
-        </div>`;
 
     const extraFields = extra && typeof extra === 'object' ? Object.entries(extra) : [];
     let piiFields = [];
@@ -143,7 +208,7 @@ function renderPagination() {
     const container = document.getElementById("search-pagination");
     if (!container) return;
     const totalPages = Math.ceil(allResults.length / PAGE_SIZE);
-    if (totalPages <= 1) { container.innerHTML = ""; container.style.display = "none"; return; }
+    if (totalPages <= 1 && loadingMoreBreaches === 0) { container.innerHTML = ""; container.style.display = "none"; return; }
     container.style.display = "";
 
     const start = (currentPage - 1) * PAGE_SIZE + 1;
@@ -170,7 +235,7 @@ function renderPagination() {
 
     container.innerHTML = `
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-secondary small">Showing ${start}–${end} of ${allResults.length} results</div>
+            <div class="text-secondary small">Showing ${start}–${end} of ${allResults.length} results${loadingMoreBreaches > 0 ? '&nbsp;<span class="badge bg-azure-lt">loading more…</span>' : ''}</div>
             <ul class="pagination mb-0">
                 <li class="page-item${currentPage === 1 ? " disabled" : ""}">
                     <a class="page-link" href="#" data-page="${currentPage - 1}">prev</a>
@@ -200,18 +265,33 @@ function renderPage() {
     renderPagination();
 }
 
-async function fetchSearchResults(tableName, searchValue, limit) {
+function parseFieldTokens(q) {
+    const tokens = [];
+    for (const part of q.split(',')) {
+        const m = part.trim().match(/^([\w.]+):(.+)$/);
+        if (!m) continue;
+        const field = m[1].toLowerCase();
+        let value = m[2].trim();
+        if (/phone|mobile|cell|fax/i.test(field)) value = value.replace(/\D/g, '');
+        tokens.push({ field, value });
+    }
+    return tokens;
+}
+
+async function fetchSearchResults(tableName, searchValue, limit, offset = 0) {
     try {
-        const keywordMatch = searchValue.match(/^(\w+):(.+)$/);
+        const tokens = parseFieldTokens(searchValue);
         const params = new URLSearchParams({ table_name: tableName.toLowerCase().replace(" ", "_") });
-        if (keywordMatch) {
-            params.set("search_field", keywordMatch[1].toLowerCase());
-            params.set("search_value", keywordMatch[2].trim());
-            params.set("limit", limit)
+        if (tokens.length > 0) {
+            for (const { field, value } of tokens) {
+                params.append("search_field", field);
+                params.append("search_value", value);
+            }
         } else {
-            params.set("limit", limit)
-            params.set("search_value", searchValue);
+            params.append("search_value", searchValue);
         }
+        params.set("limit", limit);
+        params.set("offset", offset);
         const response = await fetch(`/api/breaches/search?${params}`, {
             method: "GET",
             headers: { "API-KEY": Cookies.get("auth") }
@@ -240,21 +320,67 @@ function renderSearching() {
 
 async function filterCards(query) {
     const q = query.trim();
-    const activeTags = [...document.querySelectorAll('input[name="form-tags[]"]:checked')]
-        .map(cb => cb.value);
-    const limit = document.querySelector('input[name="breachsearchlimit"]').value;
     if (!q) { renderCards([]); return; }
 
-    renderSearching();
+    const activeTags = [...document.querySelectorAll('input[name="form-tags[]"]:checked')]
+        .map(cb => cb.value);
+    const loadAll = document.getElementById('load-all-checkbox')?.checked;
+    const chunkSize = parseInt(document.getElementById('breachsearchlimit').value) || 100;
 
     const tagsToSearch = activeTags.length > 0
         ? activeTags
         : cachedBreaches.filter(b => (b.ingested ?? "").toLowerCase() !== "no").map(b => b.name);
 
-    const results = await Promise.all(tagsToSearch.map(name => fetchSearchResults(name, q, limit)));
-    allResults = results.flat();
+    const generation = ++searchGeneration;
+    allResults = [];
     currentPage = 1;
-    renderPage();
+    loadingMoreBreaches = 0;
+    renderSearching();
+
+    if (loadAll) {
+        await loadProgressively(tagsToSearch, q, chunkSize, generation);
+    } else {
+        const results = await Promise.all(tagsToSearch.map(name => fetchSearchResults(name, q, chunkSize, 0)));
+        if (generation !== searchGeneration) return;
+        allResults = results.flat();
+        renderPage();
+    }
+}
+
+async function loadProgressively(tagsToSearch, query, chunkSize, generation) {
+    const offsets = Object.fromEntries(tagsToSearch.map(n => [n, 0]));
+    let remaining = [...tagsToSearch];
+    let isFirst = true;
+
+    while (remaining.length > 0) {
+        if (generation !== searchGeneration) return;
+
+        const batch = await Promise.all(
+            remaining.map(name => fetchSearchResults(name, query, chunkSize, offsets[name]))
+        );
+
+        if (generation !== searchGeneration) return;
+
+        const nextRemaining = [];
+        batch.forEach((results, i) => {
+            const name = remaining[i];
+            allResults.push(...results);
+            offsets[name] += results.length;
+            if (results.length >= chunkSize) nextRemaining.push(name);
+        });
+        remaining = nextRemaining;
+        loadingMoreBreaches = remaining.length;
+
+        if (isFirst) {
+            renderPage();
+            isFirst = false;
+        } else {
+            renderPagination();
+        }
+    }
+
+    loadingMoreBreaches = 0;
+    renderPagination();
 }
 
 async function fetchTags() {
@@ -286,16 +412,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     const input = document.getElementById("page-search-input");
     const btn = document.getElementById("page-search-btn");
 
+    const loadAllCheckbox = document.getElementById('load-all-checkbox');
+    const limitInput = document.getElementById('breachsearchlimit');
+    loadAllCheckbox.addEventListener('change', async e => {
+        if (e.target.checked) {
+            e.target.checked = false;
+            const result = await Swal.fire({
+                title: 'Load all entries?',
+                text: 'This will retrieve every matching record with no limit. Large breaches may return tens of thousands of results and could be slow.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, load all',
+                cancelButtonText: 'Cancel',
+                background: 'var(--tblr-bg-surface)',
+                color: 'var(--tblr-body-color)',
+            });
+            if (result.isConfirmed) {
+                e.target.checked = true;
+                limitInput.disabled = true;
+            }
+        } else {
+            limitInput.disabled = false;
+        }
+    });
+
     btn.addEventListener("click", () => filterCards(input.value));
     input.addEventListener("keydown", e => {
         if (e.key === "Enter") { hideKeywordDropdown(); filterCards(input.value); }
         if (e.key === "Escape") hideKeywordDropdown();
     });
     input.addEventListener("input", () => {
-        const val = input.value;
-        if (val.includes(':')) { hideKeywordDropdown(); return; }
-        const filtered = SEARCH_KEYWORDS.filter(kw => kw.startsWith(val.toLowerCase()));
-        val.length > 0 ? showKeywordDropdown(input, filtered) : hideKeywordDropdown();
+        const lastToken = input.value.split(',').pop().trim();
+        if (lastToken.includes(':')) { hideKeywordDropdown(); return; }
+        const filtered = SEARCH_KEYWORDS.filter(kw => kw.startsWith(lastToken.toLowerCase()));
+        lastToken.length > 0 ? showKeywordDropdown(input, filtered) : hideKeywordDropdown();
     });
     input.addEventListener("blur", () => setTimeout(hideKeywordDropdown, 150));
 });
