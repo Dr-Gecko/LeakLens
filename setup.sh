@@ -8,7 +8,7 @@ database:
   host: mariadb
   port: 3306
   user: LeakLens
-  password: $MYSQL_LEAKLENS_PASSWORD
+  password: changeme
   breaches_db: breaches
   backend_db: backend
 api:
@@ -26,7 +26,7 @@ CREATE DATABASE IF NOT EXISTS breaches;
 CREATE DATABASE IF NOT EXISTS backend;
 
 DROP USER IF EXISTS 'LeakLens'@'%';
-CREATE USER 'LeakLens'@'%' IDENTIFIED BY '$MYSQL_LEAKLENS_PASSWORD';
+CREATE USER 'LeakLens'@'%' IDENTIFIED BY 'changeme';
 
 GRANT ALL PRIVILEGES ON breaches.* TO 'LeakLens'@'%';
 GRANT ALL PRIVILEGES ON backend.* TO 'LeakLens'@'%';
