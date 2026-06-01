@@ -120,19 +120,26 @@ async def search_all_columns(request: Request, table_name: str, search_value: li
             conditions, params = [], []
             for i, (sf, sv) in enumerate(zip(search_field, search_value)):
                 exact = search_exact and i < len(search_exact) and search_exact[i] == "true"
+                wildcard = sv == "*"
                 if "." in sf:
                     json_col, json_key = sf.split(".", 1)
                     if json_col not in col_names or not re.match(r"^[\w.]+$", json_key):
                         return utils.format_response(data=[], status_code=400, reason="invalid_field")
                     expr = f"CAST(JSON_EXTRACT(`{json_col}`, '$.{json_key}') AS CHAR)"
-                    conditions.append(f"{expr} = %s" if exact else f"{expr} LIKE %s")
+                    if wildcard:
+                        conditions.append(f"{expr} IS NOT NULL")
+                    else:
+                        conditions.append(f"{expr} = %s" if exact else f"{expr} LIKE %s")
                 elif sf not in col_names:
                     return utils.format_response(data=[], status_code=400, reason="invalid_field")
                 else:
-                    # Skip CAST on native text columns — it's redundant and blocks index use
                     col_expr = f"`{sf}`" if col_types[sf] in _TEXT_TYPES else f"CAST(`{sf}` AS CHAR)"
-                    conditions.append(f"{col_expr} = %s" if exact else f"{col_expr} LIKE %s")
-                params.append(sv if exact else f"%{sv}%")
+                    if wildcard:
+                        conditions.append(f"{col_expr} IS NOT NULL")
+                    else:
+                        conditions.append(f"{col_expr} = %s" if exact else f"{col_expr} LIKE %s")
+                if not wildcard:
+                    params.append(sv if exact else f"%{sv}%")
             where_clause = " AND ".join(conditions)
         else:
             plain = search_value[0] if search_value else ""
