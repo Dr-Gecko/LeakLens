@@ -95,6 +95,7 @@ async def delete_breach(request: Request):
         if not row: return utils.format_response(status_code=404, reason="not_found")
         await database.execute(f"DROP TABLE IF EXISTS `{row['table_name']}`", database=breach_database)
         await database.execute("DELETE FROM breaches WHERE id = %s", params=(breach_id,), database=breach_database)
+        await utils.reset_table_count("breaches",db=breach_database)
         return utils.format_response(data={"deleted": breach_id})
     except Exception:
         traceback.print_exc()

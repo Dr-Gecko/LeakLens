@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import status
 from decimal import Decimal
 from datetime import datetime, date
+from functions.helpers import database
 from fastapi.responses import JSONResponse
 # Breaches Table Format
 def safe_table_name(name: str) -> str:
@@ -67,3 +68,6 @@ def clean_json(data):
         return int(data) if data % 1 == 0 else float(data)
 
     return data
+
+async def reset_table_count(table,db):
+    await database.execute_batch(["SET @num := 0",f"UPDATE {table} SET id = @num := (@num+1)",f"ALTER TABLE {table} AUTO_INCREMENT = 1",], database=db)

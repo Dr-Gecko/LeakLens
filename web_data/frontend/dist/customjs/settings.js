@@ -59,7 +59,7 @@ async function updateUserAvatar() {
                 localStorage.setItem("user", JSON.stringify(userData));
                 await update_profile_picture();
                 throw_alert("New avatar successfully uploaded","success")
-            } else if (response.status = 401) {
+            } else if (response.status === 401) {
                 throw_alert("Invalid API Key","error")
                 window.location.href = "/sign-in"
             } else {

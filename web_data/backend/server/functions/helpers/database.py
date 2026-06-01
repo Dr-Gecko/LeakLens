@@ -85,3 +85,21 @@ async def fetch_one(statement: str,params: Sequence[Any] | None = None,database:
 
 async def execute(statement: str,params: Sequence[Any] | None = None,database: str | None = None,) -> int:
     return await asyncio.to_thread(_execute_sync,statement,params,database)
+
+
+def _execute_batch_sync(statements: list[str], database: str | None = None) -> None:
+    connection = make_connection(database)
+    try:
+        cursor = connection.cursor()
+        try:
+            for stmt in statements:
+                cursor.execute(stmt)
+            connection.commit()
+        finally:
+            cursor.close()
+    finally:
+        close_connection(connection)
+
+
+async def execute_batch(statements: list[str], database: str | None = None) -> None:
+    return await asyncio.to_thread(_execute_batch_sync, statements, database)

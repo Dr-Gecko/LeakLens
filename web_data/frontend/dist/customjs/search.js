@@ -302,11 +302,12 @@ async function fetchSearchResults(tableName, searchValue, limit, offset = 0) {
             method: "GET",
             headers: { "API-KEY": Cookies.get("auth") }
         });
-        if (!response.ok) 
+        if (!response.ok) {
             if (response.status==401){
                 failedAuth()
             }
             return [];
+        }
         const data = await response.json();
         if (data.status !== "success") return [];
         const { breach_data, entries } = data.data;
@@ -398,11 +399,12 @@ async function fetchTags() {
         const response = await fetch("/api/breaches/list", {
             headers: { "API-KEY": Cookies.get("auth") }
         });
-        if (!response.ok) 
+        if (!response.ok) {
             if (response.status==401){
                 failedAuth()
             }
             throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         return data.status === "success" ? data.data : null;
     } catch {

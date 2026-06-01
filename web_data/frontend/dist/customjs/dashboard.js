@@ -12,11 +12,12 @@ async function getTopStatsData() {
                 "API-KEY": Cookies.get("auth")
             }
         });
-        if (!response.ok) 
+        if (!response.ok) {
             if (response.status==401){
                 failedAuth()
             }
             throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         if (data.status === "success") {
             return data.data;
@@ -35,11 +36,12 @@ async function loadBreachBreakdown() {
             }
         }
         );
-        if (!response.ok) 
+        if (!response.ok) {
             if (response.status==401){
                 failedAuth()
             }
             return null;
+        }
         const data = await response.json();
         if (data.status !== "success") return null;
         return data.data
@@ -54,11 +56,12 @@ async function loadDockerStats() {
                 "API-KEY": Cookies.get("auth")
             }
         });
-        if (!response.ok) 
+        if (!response.ok) {
             if (response.status==401){
                 failedAuth()
             }
             return null;
+        }
         const data = await response.json();
         if (data.status !== "success") return null;
         return data.data
@@ -159,8 +162,6 @@ function loadContainerStats(statsData) {
         containerStats.innerHTML += `<tr><td>${container['name']}</td><td>${container['status']}</td></tr>`
     });
 }
-
-
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadAllData();

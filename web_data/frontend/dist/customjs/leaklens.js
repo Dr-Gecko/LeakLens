@@ -75,11 +75,12 @@ async function getUserInfo() {
             headers: { "API-KEY": Cookies.get("auth") }
         });
 
-        if (!response.ok) 
+        if (!response.ok) {
             if (response.status==401){
                 failedAuth()
             }
             return null;
+        }
 
         const data = await response.json();
         if (data.status === "success") {
@@ -168,7 +169,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!userData.age || userData.age < Date.now() - ONE_HOUR) {
         userData = await getUserInfo();
     }
-
     if (userData) loadUserData();
 
     let leakLensData = JSON.parse(localStorage.getItem("leakLensData") || "{}");

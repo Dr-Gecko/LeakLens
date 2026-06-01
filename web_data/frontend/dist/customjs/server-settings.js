@@ -51,12 +51,7 @@ async function loadServerSettings() {
         const response = await fetch("/api/server/config", {
             headers: { "API-KEY": Cookies.get("auth") }
         });
-        if (!response.ok) 
-            if (response.status==401){
-                failedAuth()
-            }
-            return null;
-        if (!response.ok) return;
+        if (!response.ok) { if (response.status==401){failedAuth()} return; }
         const config = await response.json();
         for (const { id, parent, child } of FIELD_MAP) {
             const el = document.getElementById(id);
