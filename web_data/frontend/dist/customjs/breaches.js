@@ -9,7 +9,7 @@ const tableState = {
 
 let breachData = [];
 
-function openBreachModal(row) {document.getElementById("modal-breach-name").textContent = row.name ?? "—";document.getElementById("modal-breach-id").textContent = row.id ? `#${row.id}` : "";document.getElementById("modal-breach-actor").textContent = row.threat_actor ?? "Unknown";document.getElementById("modal-breach-records").textContent = Number(row.record_count || 0).toLocaleString();document.getElementById("modal-breach-date").textContent = row.date_added? new Date(row.date_added).toLocaleDateString(): "—";document.getElementById("modal-breach-extra").innerHTML = "";const modal = new bootstrap.Modal(document.getElementById("modal-breach-detail"));modal.show();}
+function openBreachModal(row) { document.getElementById("modal-breach-name").textContent = row.name ?? "—"; document.getElementById("modal-breach-id").textContent = row.id ? `#${row.id}` : ""; document.getElementById("modal-breach-actor").textContent = row.threat_actor ?? "Unknown"; document.getElementById("modal-breach-records").textContent = Number(row.record_count || 0).toLocaleString(); document.getElementById("modal-breach-date").textContent = row.date_added ? new Date(row.date_added).toLocaleDateString() : "—"; document.getElementById("modal-breach-extra").innerHTML = ""; const modal = new bootstrap.Modal(document.getElementById("modal-breach-detail")); modal.show(); }
 
 
 function getCachedBreachList() {
@@ -59,7 +59,7 @@ async function getBreachList() {
         });
 
         if (!response.ok) {
-            if (response.status==401){
+            if (response.status == 401) {
                 failedAuth()
             }
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -149,7 +149,7 @@ async function onEditBreach(id, formData) {
                 "Content-Type": "application/json",
                 "API-KEY": Cookies.get("auth")
             },
-            body: JSON.stringify({id:id,fields:formData })
+            body: JSON.stringify({ id: id, fields: formData })
         });
 
         const json = await response.json();
@@ -240,7 +240,9 @@ function renderBreachTable() {
             const data = await resp.json();
             if (data.status === "success") {
                 await Swal.fire({ title: "Deleted", icon: "success", timer: 1500, showConfirmButton: false, background: "var(--tblr-bg-surface)", color: "var(--tblr-body-color)" });
-                loadBreaches();
+                localStorage.removeItem(BREACH_CACHE_KEY);
+                breachData = await getBreachList();
+                renderBreachTable();
             } else {
                 Swal.fire({ title: "Error", text: "Failed to delete breach.", icon: "error", background: "var(--tblr-bg-surface)", color: "var(--tblr-body-color)" });
             }

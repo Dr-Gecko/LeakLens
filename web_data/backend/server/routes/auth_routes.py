@@ -25,7 +25,6 @@ async def get_user_info(request:Request):
 async def self_update(request: Request):
     return await auth.self_update(request)
 
-
 @router.post("/avatar")
 async def update_avatar(request: Request,file: UploadFile = File(...)):
     try:

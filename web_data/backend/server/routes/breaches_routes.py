@@ -12,6 +12,10 @@ async def get_stats_data(request:Request):
 async def list_breaches(request:Request):
     return await breach.pull_breaches(request)
 
+@router.get("/addresses")
+async def list_addresses(request: Request, limit: int = 1000, offset: int = 0, table_name: str = None):
+    return await breach.pull_addresses(request, limit=limit, offset=offset, table_name=table_name)
+
 @router.get("/search")
 async def search_breaches(request: Request, table_name: str, search_value: List[str] = Query(default=[]), search_field: List[str] = Query(default=[]), search_exact: List[str] = Query(default=[]), limit: int = 100, offset: int = 0):
     return await breach.search_all_columns(request, table_name, search_value, search_field=search_field, search_exact=search_exact, limit=limit, offset=offset)

@@ -11,8 +11,37 @@ import functions.helpers.database as database
 from functions.helpers import config as config
 
 _col_cache: dict[str, dict] = {}
-_COL_CACHE_TTL = 300 
+_COL_CACHE_TTL = 300
 _TEXT_TYPES = frozenset({"varchar", "char", "text", "tinytext", "mediumtext", "longtext", "enum", "set"})
+
+_addr_table_cache: dict = {"tables": None, "ts": 0}
+_ADDR_TABLE_TTL = 300
+
+
+async def _get_addr_table_info(breach_database: str) -> list[dict]:
+    now = time.time()
+    if _addr_table_cache["tables"] is not None and now - _addr_table_cache["ts"] < _ADDR_TABLE_TTL:
+        return _addr_table_cache["tables"]
+
+    table_rows = await database.fetch_all(
+        "SELECT table_name FROM breaches WHERE table_name IS NOT NULL",
+        database=breach_database
+    )
+    if not table_rows:
+        _addr_table_cache.update({"tables": [], "ts": now})
+        return []
+
+    async def count_addresses(tname):
+        row = await database.fetch_one(
+            f"SELECT COUNT(*) AS cnt FROM `{tname}` WHERE JSON_EXTRACT(`extra`, '$.lat') IS NOT NULL",
+            database=breach_database
+        )
+        return {"table_name": tname, "addr_count": row["cnt"] if row else 0}
+
+    results = await asyncio.gather(*[count_addresses(r["table_name"]) for r in table_rows])
+    tables_with_counts = [t for t in results if t["addr_count"] > 0]
+    _addr_table_cache.update({"tables": tables_with_counts, "ts": now})
+    return tables_with_counts
 
 
 async def _get_table_columns(table_name: str, breach_database: str) -> list[dict] | None:
@@ -197,6 +226,78 @@ async def pull_stats_data(request:Request):
         stats={"total_entries":record,"breaches":breaches['count(*)']}
         return utils.format_response(data=stats)
     except Exception as error:
+        return utils.format_response(status_code=500, reason="server_error")
+
+async def pull_addresses(request: Request, limit: int = 1000, offset: int = 0, table_name: str = None):
+    breach_database = config.get_config_value("database.breaches_db")
+    try:
+        auth_token = request.headers.get("api-key")
+        verified = await auth.verify_auth_role(auth_token)
+        if verified[0] != True: return verified[1]
+
+        if table_name is not None:
+            if not re.fullmatch(r"[A-Za-z0-9_]+", table_name):
+                return utils.format_response(status_code=400, reason="invalid_table")
+            rows, breach_info = await asyncio.gather(
+                database.fetch_all(
+                    f"SELECT JSON_UNQUOTE(JSON_EXTRACT(`extra`, '$.lat')) AS lat, "
+                    f"JSON_UNQUOTE(JSON_EXTRACT(`extra`, '$.lng')) AS lng, "
+                    f"id, name, pii "
+                    f"FROM `{table_name}` WHERE JSON_EXTRACT(`extra`, '$.lat') IS NOT NULL "
+                    f"LIMIT %s OFFSET %s",
+                    (limit, offset),
+                    database=breach_database
+                ),
+                database.fetch_one(
+                    "SELECT name, threat_actor, date_added FROM breaches WHERE LOWER(table_name) = %s",
+                    (table_name,),
+                    database=breach_database
+                )
+            )
+            if breach_info:
+                raw = utils.clean_json(dict(breach_info))
+                breach_meta = {"breach_name": raw.pop("name", None), **raw}
+            else:
+                breach_meta = {}
+            return utils.format_response(data=[
+                {**breach_meta, **dict(row)} for row in rows if row["lat"]
+            ])
+
+        tables = await _get_addr_table_info(breach_database)
+        if not tables:
+            return utils.format_response(data=[])
+        tasks = []
+        remaining_offset = offset
+        remaining_limit = limit
+        for tinfo in tables:
+            if remaining_limit <= 0:
+                break
+            tcount = tinfo["addr_count"]
+            if remaining_offset >= tcount:
+                remaining_offset -= tcount
+                continue
+            table_limit = min(remaining_limit, tcount - remaining_offset)
+            tasks.append((tinfo["table_name"], remaining_offset, table_limit))
+            remaining_limit -= table_limit
+            remaining_offset = 0
+
+        if not tasks:
+            return utils.format_response(data=[])
+
+        async def fetch_table(tname, toffset, tlimit):
+            return await database.fetch_all(
+                f"SELECT JSON_UNQUOTE(JSON_EXTRACT(`pii`, '$.home_address')) AS address "
+                f"FROM `{tname}` WHERE JSON_EXTRACT(`pii`, '$.home_address') IS NOT NULL "
+                f"LIMIT %s OFFSET %s",
+                (tlimit, toffset),
+                database=breach_database
+            )
+
+        all_rows = await asyncio.gather(*[fetch_table(t, o, l) for t, o, l in tasks])
+        addresses = [row["address"] for rows in all_rows for row in rows if row["address"]]
+        return utils.format_response(data=addresses)
+    except Exception:
+        traceback.print_exc()
         return utils.format_response(status_code=500, reason="server_error")
 
 async def pull_breaches(request:Request):
