@@ -21,6 +21,7 @@ api:
   - fastapi_server
   - mariadb_server
 EOF
+mkdir $pwd/Dockerfiles/mariadb-init/
 cat > $pwd/Dockerfiles/mariadb-init/init.sql <<EOF
 CREATE DATABASE IF NOT EXISTS breaches;
 CREATE DATABASE IF NOT EXISTS backend;
@@ -45,6 +46,29 @@ CREATE TABLE IF NOT EXISTS breaches (
     type VARCHAR(255) NULL,
     table_name VARCHAR(255) NULL,
     added_by VARCHAR(255) NULL
+);
+
+CREATE TABLE IF NOT EXISTS entry_notes (
+    id int NOT NULL auto_increment PRIMARY KEY,
+    source_table VARCHAR(255) NOT NULL,
+    source_id int NOT NULL,
+    note TEXT NOT NULL,
+    created_by VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_entry (source_table, source_id)
+);
+
+CREATE TABLE IF NOT EXISTS entry_links (
+    id int NOT NULL auto_increment PRIMARY KEY,
+    source_table VARCHAR(255) NOT NULL,
+    source_id int NOT NULL,
+    target_table VARCHAR(255) NOT NULL,
+    target_id int NOT NULL,
+    link_type VARCHAR(100) NOT NULL DEFAULT 'related',
+    created_by VARCHAR(255) NOT NULL, 
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_source (source_table, source_id),
+    INDEX idx_target (target_table, target_id)
 );
 
 USE backend;
