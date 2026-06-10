@@ -1,6 +1,6 @@
 # LeakLens
 
-![Dashboard](1.png)
+![Dashboard](assets/1.png)
 
 LeakLens is a self-hosted data analysis platform. It lets you ingest, browse and search data through a web interface. It includes RBAC, authentication, container monitoring and a interactive dashboard.
 
