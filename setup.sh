@@ -121,43 +121,10 @@ EOF
 }
 
 write_docker_compose() {
-    cat > "$PROJECT_DIR/docker-compose.yml" <<EOF
-services:
-  nginx:
-    image: nginx:latest
-    container_name: nginx_server
-    ports:
-      - "80:80"
-    volumes:
-      - ./web_data/frontend:/usr/share/nginx/html
-      - ./data/shared:/usr/share/nginx/html/static/avatars/useruploaded
-      - ./data/logs:/var/log/nginx
-      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - backend
-    restart: unless-stopped
-
-  backend:
-    build:
-      context: ./web_data/backend
-    container_name: fastapi_server
-    ports:
-      - "8081:8080"
-    volumes:
-      - ./web_data/backend/server:/app
-      - ./data/shared:/app/avatars
-      - ./config:/config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    working_dir: /app
-    environment:
-      SHARED_PUBLIC_DIR: /app/avatars
-      CONFIG_FILE: /config/server_config.yml
-      DOCKER_HOST: unix:///var/run/docker.sock
-    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
-    restart: unless-stopped
-EOF
-
-    if ! $USE_OWN_MARIADB; then
+    if $USE_OWN_MARIADB; then
+        cp "$PROJECT_DIR/config/BYODB-docker-compose.yml" "$PROJECT_DIR/docker-compose.yml"
+    else
+        cp "$PROJECT_DIR/config/BYODB-docker-compose.yml" "$PROJECT_DIR/docker-compose.yml"
         cat >> "$PROJECT_DIR/docker-compose.yml" <<EOF
 
   mariadb:
