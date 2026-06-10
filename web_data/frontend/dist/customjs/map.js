@@ -108,7 +108,7 @@ async function loadTable(tableName, authKey) {
         if (!resp.ok) return;
 
         const json = await resp.json();
-        if (json.status !== 'success' || !Array.isArray(json.data) || !json.data.length) return;
+        if (!json.success || !Array.isArray(json.data) || !json.data.length) return;
 
         addMarkers(json.data);
 
@@ -126,7 +126,7 @@ async function loadAndPlot() {
     if (!resp.ok) return;
 
     const json = await resp.json();
-    if (json.status !== 'success' || !Array.isArray(json.data) || !json.data.length) return;
+    if (!json.success || !Array.isArray(json.data) || !json.data.length) return;
 
     const tables = json.data.map(b => safeTableName(b.name));
     Promise.allSettled(tables.map(t => loadTable(t, authKey)));

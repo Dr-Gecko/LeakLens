@@ -6,9 +6,9 @@ async function getUsersData() {
                 "API-KEY": Cookies.get("auth")
             }
         });
-        if (!response.ok) { if (response.status==401){failedAuth()} return; }
+        if (!response.ok) { if (response.status === 401) { failedAuth(); } return null; }
         const data = await response.json();
-        return data.status === "success"
+        return data.success
             ? data.data.users
             : null;
 

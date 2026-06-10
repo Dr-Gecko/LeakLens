@@ -11,19 +11,19 @@ async def return_config():
     return config.load_config()
 
 async def leak_lens_info():
-    return utils.format_response(data={"version":config.get_config_value("api.version")})
+    return utils.api_response(message="LeakLense info", data={"version": config.get_config_value("api.version")})
 
 
 async def edit_config(request:Request):
     try:
         auth_token = request.headers.get("api-key")
-        verified = await verify_auth_role(auth_token)    
-        if verified[0]!=True: return verified[1] 
+        verified = await verify_auth_role(auth_token)
+        if verified[0]!=True: return verified[1]
         config_data = config.load_config()
         request_data = await request.json()
         config_data[request_data['parent']][request_data['child']] = request_data['data']
         config.save_config(config_data)
-        return utils.format_response(reason="Updated config")
+        return utils.api_response(message="config updated", data={"parent": request_data['parent'], "child": request_data['child'], "value": request_data['data']})
     except Exception as error:
         return False
 
@@ -42,7 +42,7 @@ def get_single_container_stats(name: str):
             "bytes_tx":0,
             "bytes_rx":0
         }
-        else: 
+        else:
             memory_used = stats["memory_stats"]["usage"]
             memory_limit = stats["memory_stats"]["limit"]
             bytes_tx=stats["networks"]["eth0"]['tx_bytes']

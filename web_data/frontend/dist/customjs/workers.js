@@ -18,7 +18,7 @@ async function getWorkerList() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const json = await response.json();
-        return json.status === "success" && Array.isArray(json.data) ? json.data : [];
+        return json.success && Array.isArray(json.data) ? json.data : [];
     } catch (error) {
         console.error("Request failed:", error);
         return [];
@@ -132,7 +132,7 @@ function renderWorkerTable() {
             });
             if (!result.isConfirmed) return;
             const data = await stopWorker(link.dataset.id);
-            if (data.status === "success") {
+            if (data.success) {
                 workerData = await getWorkerList();
                 renderWorkerTable();
             }
@@ -257,7 +257,7 @@ async function fetchScriptArgs(scriptName) {
             headers: { "API-KEY": Cookies.get("auth") }
         });
         const json = await response.json();
-        return json.status === "success" && Array.isArray(json.data) ? json.data : [];
+        return json.success && Array.isArray(json.data) ? json.data : [];
     } catch {
         return [];
     }
@@ -316,7 +316,7 @@ async function populateScriptDropdown() {
             headers: { "API-KEY": Cookies.get("auth") }
         });
         const json = await response.json();
-        const scripts = json.status === "success" && Array.isArray(json.data) ? json.data : [];
+        const scripts = json.success && Array.isArray(json.data) ? json.data : [];
         select.innerHTML = scripts.length
             ? `<option value="" disabled selected>Select a script…</option>` + scripts.map(s => `<option value="${s}">${s}</option>`).join("")
             : `<option value="" disabled selected>No scripts found</option>`;
@@ -348,12 +348,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
         const data = await startWorker(name, worker, collectArgs());
-        if (data.status === "success") {
+        if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById("modal-start-worker"))?.hide();
             workerData = await getWorkerList();
             renderWorkerTable();
         } else {
-            Swal.fire({ title: "Error", text: data.reason ?? "Failed to start worker.", icon: "error", background: "var(--tblr-bg-surface)", color: "var(--tblr-body-color)" });
+            Swal.fire({ title: "Error", text: data.message ?? "Failed to start worker.", icon: "error", background: "var(--tblr-bg-surface)", color: "var(--tblr-body-color)" });
         }
     });
 });

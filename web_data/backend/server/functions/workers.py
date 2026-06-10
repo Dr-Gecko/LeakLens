@@ -114,9 +114,9 @@ async def list_scripts(request: Request):
         verified = await auth.verify_auth_role(request.headers.get("api-key"))
         if not verified[0]: return verified[1]
         scripts = sorted(p.name for p in WORKER_DIR.glob("*.py"))
-        return utils.format_response(data=scripts)
+        return utils.api_response(message="scripts retrieved", data=scripts, meta={"count": len(scripts)})
     except Exception:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 
 async def get_script_args(request: Request, worker: str):
@@ -125,11 +125,11 @@ async def get_script_args(request: Request, worker: str):
         if not verified[0]: return verified[1]
         worker_path = WORKER_DIR / worker
         if not worker_path.exists():
-            return utils.format_response(status_code=404, reason="worker_not_found")
+            return utils.api_response(message="worker not found", status_code=404, error={"code": "WORKER_NOT_FOUND", "worker": worker})
         args = await asyncio.to_thread(_parse_script_args, worker_path)
-        return utils.format_response(data=args)
+        return utils.api_response(message="script args retrieved", data=args, meta={"worker": worker, "count": len(args)})
     except Exception:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 
 async def start_worker(request: Request):
@@ -142,9 +142,9 @@ async def start_worker(request: Request):
         args = body.get("args", {})
         worker_path = WORKER_DIR / worker
         if not worker_path.exists():
-            return utils.format_response(status_code=404, reason="worker_not_found")
+            return utils.api_response(message="worker not found", status_code=404, error={"code": "WORKER_NOT_FOUND", "worker": worker})
         if worker_path.suffix != ".py":
-            return utils.format_response(status_code=400, reason="invalid_worker_type")
+            return utils.api_response(message="invalid worker type", status_code=400, error={"code": "INVALID_WORKER_TYPE", "worker": worker})
         worker_id = str(uuid.uuid4())
         log_path = LOG_DIR / f"{worker_id}.log"
         command = _build_command(worker_path, args)
@@ -167,9 +167,9 @@ async def start_worker(request: Request):
             "spawned_by": verified[1],
             "spawned_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
-        return utils.format_response(data=_worker_dict(worker_id, running_workers[worker_id], "running", None))
+        return utils.api_response(message="worker started", data=_worker_dict(worker_id, running_workers[worker_id], "running", None))
     except Exception:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 
 async def get_worker_status(request: Request, worker_id: str):
@@ -178,13 +178,13 @@ async def get_worker_status(request: Request, worker_id: str):
         if not verified[0]: return verified[1]
         worker = running_workers.get(worker_id)
         if not worker:
-            return utils.format_response(status_code=404, reason="worker_not_found")
+            return utils.api_response(message="worker not found", status_code=404, error={"code": "WORKER_NOT_FOUND", "worker_id": worker_id})
         state, exit_code = _poll_state(worker["process"])
         if state != "running":
             running_workers.pop(worker_id, None)
-        return utils.format_response(data=_worker_dict(worker_id, worker, state, exit_code))
+        return utils.api_response(message="worker status retrieved", data=_worker_dict(worker_id, worker, state, exit_code))
     except Exception:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 
 async def get_worker_logs(request: Request, worker_id: str):
@@ -193,11 +193,11 @@ async def get_worker_logs(request: Request, worker_id: str):
         if not verified[0]: return verified[1]
         worker = running_workers.get(worker_id)
         if not worker:
-            return utils.format_response(status_code=404, reason="worker_not_found")
+            return utils.api_response(message="worker not found", status_code=404, error={"code": "WORKER_NOT_FOUND", "worker_id": worker_id})
         logs = await asyncio.to_thread(Path(worker["log_path"]).read_text)
-        return utils.format_response(data={"worker_id": worker_id, "logs": logs})
+        return utils.api_response(message="worker logs retrieved", data={"worker_id": worker_id, "logs": logs})
     except Exception:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 
 async def stop_worker(request: Request, worker_id: str):
@@ -206,16 +206,16 @@ async def stop_worker(request: Request, worker_id: str):
         if not verified[0]: return verified[1]
         worker = running_workers.get(worker_id)
         if not worker:
-            return utils.format_response(status_code=404, reason="worker_not_found")
+            return utils.api_response(message="worker not found", status_code=404, error={"code": "WORKER_NOT_FOUND", "worker_id": worker_id})
         process = worker["process"]
         if process.poll() is None:
             process.send_signal(signal.SIGTERM)
             state = "stopping"
         else:
             state = "already_stopped"
-        return utils.format_response(data={"worker_id": worker_id, "state": state})
+        return utils.api_response(message="worker stop signal sent", data={"worker_id": worker_id, "state": state})
     except Exception:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 
 async def list_workers(request: Request):
@@ -226,6 +226,6 @@ async def list_workers(request: Request):
         for worker_id, worker in running_workers.items():
             state, exit_code = _poll_state(worker["process"])
             result.append(_worker_dict(worker_id, worker, state, exit_code))
-        return utils.format_response(data=result)
+        return utils.api_response(message="workers listed", data=result, meta={"count": len(result)})
     except Exception:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>LeakLens - Spider View</title>
+    <link href="./dist/css/tabler.min.css" rel="stylesheet" />
+    <link href="./dist/css/demo.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        html, body { height: 100%; margin: 0; }
+        #spider-wrap { display: flex; height: calc(100vh - 56px); }
+        #spider-graph { flex: 1; background: var(--tblr-bg-surface); }
+        #spider-sidebar {
+            width: 320px;
+            min-width: 280px;
+            overflow-y: auto;
+            border-left: 1px solid var(--tblr-border-color);
+            padding: 1rem;
+            background: var(--tblr-bg-surface);
+        }
+    </style>
+</head>
+<body>
+<script src="./dist/js/demo-theme.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
+<script src="./dist/customjs/leaklens.js?v=16.14.0"></script>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+<div class="page">
+    <header class="navbar navbar-expand-md d-print-none">
+        <div class="container-xl">
+            <div class="navbar-brand navbar-brand-autodark pe-0 pe-md-3">
+                <a href=".">
+                    <span class="fw-bold">LeakLens</span>
+                </a>
+            </div>
+            <div class="navbar-nav ms-auto">
+                <a href="search.html" class="btn btn-secondary btn-sm">Back to Search</a>
+            </div>
+        </div>
+    </header>
+
+    <div id="spider-wrap">
+        <div id="spider-graph"></div>
+        <div id="spider-sidebar">
+            <div id="sidebar-content">
+                <div class="text-secondary small">Click a node to see details</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(async function () {
+    const AUTH = Cookies.get("auth");
+    if (!AUTH) { window.location = "index.html"; return; }
+
+    const params  = new URLSearchParams(window.location.search);
+    const rootTable = params.get("table");
+    const rootId    = params.get("id");
+    if (!rootTable || !rootId) {
+        document.getElementById("sidebar-content").innerHTML =
+            `<div class="alert alert-danger">Missing table/id params</div>`;
+        return;
+    }
+
+    const nodes = new vis.DataSet();
+    const edges = new vis.DataSet();
+    const expandedNodes = new Set();
+
+    function nodeKey(table, id) { return `${table}:${id}`; }
+
+    function addNode(table, id, label, isRoot) {
+        const key = nodeKey(table, id);
+        if (!nodes.get(key)) {
+            nodes.add({
+                id: key,
+                label: label ?? `${table}\n#${id}`,
+                color: isRoot ? { background: "#206bc4", border: "#1a5aa0" } : { background: "#4dabf7", border: "#339af0" },
+                font: { color: isRoot ? "#fff" : "#1a1a2e" },
+                shape: "box",
+                _table: table,
+                _id: id
+            });
+        }
+    }
+
+    async function expandNode(table, id) {
+        const key = nodeKey(table, id);
+        if (expandedNodes.has(key)) return;
+        expandedNodes.add(key);
+
+        const data = await apiFetch(`/api/entries/links?source_table=${table}&source_id=${id}`);
+        if (!data) return;
+
+        for (const link of data) {
+            const isSource = link.source_table === table && link.source_id == id;
+            const otherTable = isSource ? link.target_table : link.source_table;
+            const otherId    = isSource ? link.target_id    : link.source_id;
+            const otherKey   = nodeKey(otherTable, otherId);
+
+            addNode(otherTable, otherId, `${otherTable}\n#${otherId}`, false);
+            if (!edges.get(`${key}-${otherKey}`) && !edges.get(`${otherKey}-${key}`)) {
+                edges.add({
+                    id: `${key}-${otherKey}`,
+                    from: key,
+                    to: otherKey,
+                    label: link.link_type,
+                    font: { size: 10, align: "middle" },
+                    arrows: "none"
+                });
+            }
+        }
+    }
+
+    async function apiFetch(path) {
+        try {
+            const r = await fetch(path, { headers: { "API-KEY": AUTH } });
+            if (!r.ok) return null;
+            const j = await r.json();
+            return j.data ?? null;
+        } catch { return null; }
+    }
+
+    async function showSidebar(table, id) {
+        const sidebar = document.getElementById("sidebar-content");
+        sidebar.innerHTML = `<div class="text-secondary small">Loading…</div>`;
+
+        const [notes, links] = await Promise.all([
+            apiFetch(`/api/entries/notes?source_table=${table}&source_id=${id}`),
+            apiFetch(`/api/entries/links?source_table=${table}&source_id=${id}`)
+        ]);
+
+        const noteHtml = (notes ?? []).length
+            ? (notes ?? []).map(n => `
+                <div class="mb-2">
+                    <div class="small">${n.note.replace(/</g,"&lt;")}</div>
+                    <div class="text-secondary" style="font-size:0.72em">${n.created_by} · ${new Date(n.created_at).toLocaleString()}</div>
+                </div>`).join("")
+            : `<div class="text-secondary small">No notes</div>`;
+
+        const linkHtml = (links ?? []).length
+            ? (links ?? []).map(l => {
+                const isSource = l.source_table === table && l.source_id == id;
+                const otherTable = isSource ? l.target_table : l.source_table;
+                const otherId    = isSource ? l.target_id    : l.source_id;
+                return `<div class="small mb-1"><span class="badge bg-secondary me-1">${l.link_type}</span>${otherTable} #${otherId}</div>`;
+              }).join("")
+            : `<div class="text-secondary small">No links</div>`;
+
+        sidebar.innerHTML = `
+            <div class="subheader mb-1">${table}</div>
+            <div class="fw-bold mb-3">#${id}</div>
+
+            <div class="subheader mb-1">Notes</div>
+            <div class="mb-3">${noteHtml}</div>
+
+            <div class="subheader mb-1">Links</div>
+            <div class="mb-3">${linkHtml}</div>
+
+            <a class="btn btn-sm btn-secondary w-100" href="search.html" target="_blank">Search this breach</a>`;
+    }
+
+    // Seed node
+    addNode(rootTable, rootId, `${rootTable}\n#${rootId}`, true);
+    await expandNode(rootTable, rootId);
+
+    const container = document.getElementById("spider-graph");
+    const network = new vis.Network(container, { nodes, edges }, {
+        layout: { improvedLayout: true },
+        physics: { stabilization: { iterations: 150 } },
+        interaction: { hover: true, tooltipDelay: 200 },
+        edges: { smooth: { type: "cubicBezier" }, color: { color: "#adb5bd" } }
+    });
+
+    network.on("click", async (params) => {
+        if (!params.nodes.length) return;
+        const nodeId = params.nodes[0];
+        const node = nodes.get(nodeId);
+        if (!node) return;
+        showSidebar(node._table, node._id);
+        await expandNode(node._table, node._id);
+    });
+
+    // Auto-show sidebar for seed node
+    showSidebar(rootTable, rootId);
+})();
+</script>
+</body>
+</html>

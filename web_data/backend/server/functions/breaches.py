@@ -93,25 +93,25 @@ async def reload_count_stream(request: Request):
     except Exception as error:
         print(error)
         yield f"data: {json.dumps({'status': 'error', 'reason': 'failed to reload counts'})}\n\n"
-    
-    
+
+
 async def create_breach(request:Request):
     try:
         breach_database = config.get_config_value("database.breaches_db")
         auth_token = request.headers.get("api-key")
-        verified = await auth.verify_auth_role(auth_token)    
-        if verified[0]!=True: return verified[1] 
+        verified = await auth.verify_auth_role(auth_token)
+        if verified[0]!=True: return verified[1]
         records, threat_actor, name,type,ingested = (request_data := await request.json())['record_count'], request_data['threat_actor'], request_data['name'],request_data['type'],request_data['ingested']
         table_data=utils.generate_breach_table(name)
-        await database.execute(table_data[0],database=breach_database) # create actual table
+        await database.execute(table_data[0],database=breach_database)
         sql = """INSERT INTO breaches (name,threat_actor,record_count,ingested,`type`,table_name,added_by) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
         values = (name.title(),threat_actor,records,ingested,type.title(),table_data[1],verified[1])
         await database.execute(sql,params=values,database=breach_database)
-        return utils.format_response(data={"answer":"created table"})
+        return utils.api_response(message="breach created", data={"breach_name": name.title(), "table_name": table_data[1], "record_count": records})
     except Exception as error:
         print(error)
         traceback.print_exc()
-        return utils.format_response(status_code=500,reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 async def delete_breach(request: Request):
     try:
@@ -121,14 +121,14 @@ async def delete_breach(request: Request):
         breach_database = config.get_config_value("database.breaches_db")
         breach_id = (await request.json())["id"]
         row = await database.fetch_one("SELECT table_name FROM breaches WHERE id = %s", (breach_id,), database=breach_database)
-        if not row: return utils.format_response(status_code=404, reason="not_found")
+        if not row: return utils.api_response(message="breach not found", status_code=404, error={"code": "BREACH_NOT_FOUND"})
         await database.execute(f"DROP TABLE IF EXISTS `{row['table_name']}`", database=breach_database)
         await database.execute("DELETE FROM breaches WHERE id = %s", params=(breach_id,), database=breach_database)
         await utils.reset_table_count("breaches",db=breach_database)
-        return utils.format_response(data={"deleted": breach_id})
+        return utils.api_response(message="breach deleted", data={"id": breach_id, "table_name": row["table_name"]})
     except Exception:
         traceback.print_exc()
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 async def search_all_columns(request: Request, table_name: str, search_value: list, limit: int = 100, search_field: list = None, search_exact: list = None, offset: int = 0):
     try:
@@ -140,7 +140,7 @@ async def search_all_columns(request: Request, table_name: str, search_value: li
         breach_database = config.get_config_value("database.breaches_db")
         columns = await _get_table_columns(table_name, breach_database)
         if not columns:
-            return utils.format_response(data=[], status_code=404, reason="table_not_found")
+            return utils.api_response(message="table not found", status_code=404, error={"code": "TABLE_NOT_FOUND"})
 
         col_types = {c["column_name"]: c["data_type"].lower() for c in columns}
         col_names = set(col_types.keys())
@@ -153,14 +153,14 @@ async def search_all_columns(request: Request, table_name: str, search_value: li
                 if "." in sf:
                     json_col, json_key = sf.split(".", 1)
                     if json_col not in col_names or not re.match(r"^[\w.]+$", json_key):
-                        return utils.format_response(data=[], status_code=400, reason="invalid_field")
+                        return utils.api_response(message="invalid field", status_code=400, error={"code": "INVALID_FIELD", "field": sf})
                     expr = f"CAST(JSON_EXTRACT(`{json_col}`, '$.{json_key}') AS CHAR)"
                     if wildcard:
                         conditions.append(f"{expr} IS NOT NULL")
                     else:
                         conditions.append(f"{expr} = %s" if exact else f"{expr} LIKE %s")
                 elif sf not in col_names:
-                    return utils.format_response(data=[], status_code=400, reason="invalid_field")
+                    return utils.api_response(message="invalid field", status_code=400, error={"code": "INVALID_FIELD", "field": sf})
                 else:
                     col_expr = f"`{sf}`" if col_types[sf] in _TEXT_TYPES else f"CAST(`{sf}` AS CHAR)"
                     if wildcard:
@@ -200,11 +200,15 @@ async def search_all_columns(request: Request, table_name: str, search_value: li
 
         breach_meta = utils.clean_json(dict(breach_info)) if breach_info else {"name": table_name}
         entries = utils.clean_json([parse_extra(dict(row)) for row in rows])
-        return utils.format_response(data={"breach_data": breach_meta, "entries": entries})
+        return utils.api_response(
+            message="search results",
+            data={"breach_data": breach_meta, "entries": entries},
+            meta={"count": len(entries), "limit": limit, "offset": offset}
+        )
 
     except Exception:
         traceback.print_exc()
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 
 async def _pull_stats_data_from_db():
@@ -219,14 +223,14 @@ async def pull_stats_data(request:Request):
     breach_database = config.get_config_value("database.breaches_db")
     try:
         auth_token = request.headers.get("api-key")
-        verified = await auth.verify_auth_role(auth_token)    
-        if verified[0]!=True: return verified[1] 
+        verified = await auth.verify_auth_role(auth_token)
+        if verified[0]!=True: return verified[1]
         record = await _pull_stats_data_from_db()
         breaches = await database.fetch_one("select count(*) from breaches",database=breach_database)
         stats={"total_entries":record,"breaches":breaches['count(*)']}
-        return utils.format_response(data=stats)
+        return utils.api_response(message="stats retrieved", data=stats)
     except Exception as error:
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 async def pull_addresses(request: Request, limit: int = 1000, offset: int = 0, table_name: str = None):
     breach_database = config.get_config_value("database.breaches_db")
@@ -237,7 +241,7 @@ async def pull_addresses(request: Request, limit: int = 1000, offset: int = 0, t
 
         if table_name is not None:
             if not re.fullmatch(r"[A-Za-z0-9_]+", table_name):
-                return utils.format_response(status_code=400, reason="invalid_table")
+                return utils.api_response(message="invalid table name", status_code=400, error={"code": "INVALID_TABLE"})
             rows, breach_info = await asyncio.gather(
                 database.fetch_all(
                     f"SELECT JSON_UNQUOTE(JSON_EXTRACT(`extra`, '$.lat')) AS lat, "
@@ -259,13 +263,16 @@ async def pull_addresses(request: Request, limit: int = 1000, offset: int = 0, t
                 breach_meta = {"breach_name": raw.pop("name", None), **raw}
             else:
                 breach_meta = {}
-            return utils.format_response(data=[
-                {**breach_meta, **dict(row)} for row in rows if row["lat"]
-            ])
+            entries = [{**breach_meta, **dict(row)} for row in rows if row["lat"]]
+            return utils.api_response(
+                message="addresses retrieved",
+                data=entries,
+                meta={"count": len(entries), "limit": limit, "offset": offset, "table_name": table_name}
+            )
 
         tables = await _get_addr_table_info(breach_database)
         if not tables:
-            return utils.format_response(data=[])
+            return utils.api_response(message="no address data available", data=[])
         tasks = []
         remaining_offset = offset
         remaining_limit = limit
@@ -282,7 +289,7 @@ async def pull_addresses(request: Request, limit: int = 1000, offset: int = 0, t
             remaining_offset = 0
 
         if not tasks:
-            return utils.format_response(data=[])
+            return utils.api_response(message="no addresses found", data=[], meta={"limit": limit, "offset": offset})
 
         async def fetch_table(tname, toffset, tlimit):
             return await database.fetch_all(
@@ -295,24 +302,28 @@ async def pull_addresses(request: Request, limit: int = 1000, offset: int = 0, t
 
         all_rows = await asyncio.gather(*[fetch_table(t, o, l) for t, o, l in tasks])
         addresses = [row["address"] for rows in all_rows for row in rows if row["address"]]
-        return utils.format_response(data=addresses)
+        return utils.api_response(
+            message="addresses retrieved",
+            data=addresses,
+            meta={"count": len(addresses), "limit": limit, "offset": offset}
+        )
     except Exception:
         traceback.print_exc()
-        return utils.format_response(status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 async def pull_breaches(request:Request):
     breach_database = config.get_config_value("database.breaches_db")
     try:
         auth_token = request.headers.get("api-key")
-        verified = await auth.verify_auth_role(auth_token)    
-        if verified[0]!=True: return verified[1] 
+        verified = await auth.verify_auth_role(auth_token)
+        if verified[0]!=True: return verified[1]
         query = "SELECT id, name, threat_actor, date_added, record_count, ingested, type FROM breaches;"
         rows = await database.fetch_all(query, database=breach_database)
-        return utils.format_response(data=utils.clean_json(rows))
+        return utils.api_response(message="breaches retrieved", data=utils.clean_json(rows), meta={"count": len(rows)})
     except Exception as error:
         print(error)
         traceback.print_exc()
-        return utils.format_response(data={}, status_code=500, reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})
 
 async def update_breach(request:Request):
     try:
@@ -320,9 +331,9 @@ async def update_breach(request:Request):
         auth_token = request.headers.get("api-key")
         request_data = await request.json()
         required_role = 3
-        verified = await auth.verify_auth_role(auth_token)    
-        if verified[0]!=True: return verified[1] 
-        if verified[2]<required_role: return verified[1] 
+        verified = await auth.verify_auth_role(auth_token)
+        if verified[0]!=True: return verified[1]
+        if verified[2]<required_role: return verified[1]
         update_fields = []
         params = []
         for item in request_data['fields']:
@@ -331,8 +342,8 @@ async def update_breach(request:Request):
         update_statement = f"""UPDATE breaches SET {', '.join(update_fields)} WHERE id = %s"""
         print(update_statement,(*params,request_data['id']))
         await database.execute(update_statement,(*params,request_data['id']),database=breach_database)
-        return utils.format_response(data={"answer":"updated table"})
+        return utils.api_response(message="breach updated", data={"id": request_data['id'], "fields": list(request_data['fields'].keys())})
     except Exception as error:
         print(error)
         traceback.print_exc()
-        return utils.format_response(status_code=500,reason="server_error")
+        return utils.api_response(message="server error", status_code=500, error={"code": "INTERNAL_ERROR"})

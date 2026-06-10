@@ -33,6 +33,23 @@ const navbar_pages = {
     }
 };
 
+
+function throw_alert({title = "Notice",message = "",icon = "info",timer = 2000,progress = true,position = "top-end",toast = false} = {}) {
+    return Swal.fire({
+        theme: "auto",
+        title,
+        text: message,
+        icon,
+        toast,
+        position,
+        timer,
+        timerProgressBar: progress,
+        showConfirmButton: false,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+    });
+}
+
 function add_navbar_pages() {
     const list = document.getElementById("navbar-pages");
 
@@ -112,6 +129,15 @@ function timeDifference(current, previous) {
         return 'approximately ' + Math.round(elapsed / msPerYear) + ' years ago';
     }
 }
+function formatStatsAge(fetchedAt) {
+    const ageMs = Date.now() - fetchedAt;
+    const minutes = Math.floor(ageMs / 60000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+}
+
 function formatPhoneNumber(phoneNumberString) {
     var cleaned = ('' + phoneNumberString).replace(/\D/g, '');
     var match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
@@ -137,26 +163,12 @@ function formatBytes(bytes, decimals = 2) {
 }
 async function getUserInfo() {
     try {
-        const response = await fetch("/api/auth/info", {
-            headers: { "API-KEY": Cookies.get("auth") }
-        });
-
-        if (!response.ok) {
-            if (response.status == 401) {
-                failedAuth()
-            }
-            return null;
-        }
-
+        const response = await fetch("/api/auth/info", { headers: { "API-KEY": Cookies.get("auth") } });
+        if (!response.ok) { if (response.status == 401) { failedAuth() } return null; }
         const data = await response.json();
-        if (data.status === "success") {
-            const userData = {
-                age: Date.now(),
-                ...data.data.user_info
-            };
-
-            localStorage.setItem("user", JSON.stringify(userData));
-            return userData;
+        if (data.success) {
+            const userData = { age: Date.now(), ...data.data.user_info };
+            localStorage.setItem("user", JSON.stringify(userData)); return userData;
         }
         return null;
     } catch (error) {
@@ -164,6 +176,7 @@ async function getUserInfo() {
         return null;
     }
 }
+
 function update_profile_picture() {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     const path = userData.user_avatar_path;
@@ -187,12 +200,10 @@ function loadUserData() {
 }
 function loadLeakLensData() {
     const leakLensData = JSON.parse(localStorage.getItem("leakLensData") || "{}");
-
     const setText = (id, value) => {
         const el = document.getElementById(id);
         if (el) el.textContent = value || "null";
     };
-
     setText("version", leakLensData.version);
     document.getElementById("version").href = `/changelog#${leakLensData.version}`
     update_profile_picture();
@@ -208,7 +219,7 @@ async function getServerInfo() {
 
         const data = await response.json();
 
-        if (data.status === "success") {
+        if (data.success) {
             const leakLensData = {
                 age: Date.now(),
                 ...data.data

@@ -5,32 +5,31 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ${PWD}/../web_data/frontend:/usr/share/nginx/html
-      - ${PWD}/../data/shared:/usr/share/nginx/html/static/avatars/useruploaded
-      - ${PWD}/../data/logs:/var/log/nginx
-      - ${PWD}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web_data/frontend:/usr/share/nginx/html
+      - ./data/shared:/usr/share/nginx/html/static/avatars/useruploaded
+      - ./data/logs:/var/log/nginx
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
     restart: unless-stopped
 
   backend:
-    build: ${PWD}/../web_data/backend/
+    build:
+      context: ./web_data/backend
     container_name: fastapi_server
     ports:
       - "8081:8080"
     volumes:
-      - ${PWD}/../web_data/backend/server:/app
-      - ${PWD}/../data/shared:/app/avatars
+      - ./web_data/backend/server:/app
+      - ./data/shared:/app/avatars
+      - ./config:/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
-
     working_dir: /app
     environment:
       SHARED_PUBLIC_DIR: /app/avatars
+      CONFIG_FILE: /config/server_config.yml
       DOCKER_HOST: unix:///var/run/docker.sock
-
     command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
-    depends_on:
-      - mariadb
     restart: unless-stopped
 
   mariadb:
@@ -39,8 +38,8 @@ services:
     ports:
       - "3305:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_ROOT_PASSWORD: q7hEgG2APnHUXwoVvi2qLAbNpx8cbJEq
     volumes:
-      - ${PWD}/../data/mariadb:/var/lib/mysql
-      - ${PWD}/mariadb-init:/docker-entrypoint-initdb.d:ro
+      - ./data/mariadb:/var/lib/mysql
+      - ./config/mariadb-init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped

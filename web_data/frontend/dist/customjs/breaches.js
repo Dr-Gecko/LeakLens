@@ -66,8 +66,7 @@ async function getBreachList() {
         }
 
         const json = await response.json();
-
-        const rows = json.status === "success" && Array.isArray(json.data)
+        const rows = json.success && Array.isArray(json.data)
             ? json.data
             : [];
 
@@ -154,8 +153,8 @@ async function onEditBreach(id, formData) {
 
         const json = await response.json();
 
-        if (!response.ok || json.status !== "success") {
-            throw new Error(json.status ?? "unknown error");
+        if (!response.ok || !json.success) {
+            throw new Error(json.message ?? "unknown error");
         }
 
         localStorage.removeItem(BREACH_CACHE_KEY);
@@ -238,7 +237,7 @@ function renderBreachTable() {
                 body: JSON.stringify({ id }),
             });
             const data = await resp.json();
-            if (data.status === "success") {
+            if (data.success) {
                 await Swal.fire({ title: "Deleted", icon: "success", timer: 1500, showConfirmButton: false, background: "var(--tblr-bg-surface)", color: "var(--tblr-body-color)" });
                 localStorage.removeItem(BREACH_CACHE_KEY);
                 breachData = await getBreachList();
@@ -371,8 +370,8 @@ async function onCreateBreach(formData) {
 
         const json = await response.json();
 
-        if (!response.ok || json.status !== "success") {
-            throw new Error(json.status ?? "unknown error");
+        if (!response.ok || !json.success) {
+            throw new Error(json.message ?? "unknown error");
         }
 
         localStorage.removeItem(BREACH_CACHE_KEY);

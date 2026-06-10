@@ -21,3 +21,7 @@ app.include_router(auth_router)
 app.include_router(breach_router)
 app.include_router(server_router)
 app.include_router(worker_router)
+
+
+from routes.entries_routes import router as entries_router
+app.include_router(entries_router)

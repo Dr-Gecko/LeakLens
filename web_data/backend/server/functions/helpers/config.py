@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
 
-CONFIG_PATH = Path("/app/server_config.yml")
+CONFIG_PATH = Path("/config/server_config.yml")
 
 def load_config():
     if not CONFIG_PATH.exists():

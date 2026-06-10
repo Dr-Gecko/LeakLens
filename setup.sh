@@ -1,40 +1,41 @@
-#!/bin/bash
-pwd=$(pwd)
-MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32 | tr -dc '[:alnum:]\n\r')
-MYSQL_LEAKLENS_PASSWORD=$(openssl rand -base64 32 | tr -dc '[:alnum:]\n\r')
-VERSION = $(cat .version)
-cat > web_data/backend/server/server_config.yml <<EOF
-database:
-  host: mariadb
-  port: 3306
-  user: LeakLens
-  password: changeme
-  breaches_db: breaches
-  backend_db: backend
-api:
-  name: LeakLens
-  business_id: test
-  location: test
-  version: $VERSION
-  containers_to_monitor:
-  - nginx_server
-  - fastapi_server
-  - mariadb_server
-EOF
-mkdir $pwd/Dockerfiles/mariadb-init/
-cat > $pwd/Dockerfiles/mariadb-init/init.sql <<EOF
-CREATE DATABASE IF NOT EXISTS breaches;
-CREATE DATABASE IF NOT EXISTS backend;
+#!/usr/bin/env bash
+set -euo pipefail
+clear
+PROJECT_DIR="$(pwd)"
+IP_ADDR=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+mkdir -p "$PROJECT_DIR/config"
+mkdir -p "$PROJECT_DIR/data"
 
-DROP USER IF EXISTS 'LeakLens'@'%';
-CREATE USER 'LeakLens'@'%' IDENTIFIED BY 'changeme';
+randpass() {
+    openssl rand -base64 32 | tr -dc '[:alnum:]' | head -c 32
+}
 
-GRANT ALL PRIVILEGES ON breaches.* TO 'LeakLens'@'%';
-GRANT ALL PRIVILEGES ON backend.* TO 'LeakLens'@'%';
+prompt() {
+    local var="$1"
+    local text="$2"
+    local value=""
+
+    while [[ -z "$value" ]]; do
+        read -r -p "$text" value
+    done
+
+    printf -v "$var" '%s' "$value"
+}
+
+write_mariadb_init() {
+    cat > "$PROJECT_DIR/config/mariadb-init/init.sql" <<EOF
+CREATE DATABASE IF NOT EXISTS $DBBREACHDB;
+CREATE DATABASE IF NOT EXISTS $DBLEAKDB;
+
+DROP USER IF EXISTS '$DBUSR'@'%';
+CREATE USER '$DBUSR'@'%' IDENTIFIED BY '$DBPASS';
+
+GRANT ALL PRIVILEGES ON $DBBREACHDB.* TO '$DBUSR'@'%';
+GRANT ALL PRIVILEGES ON $DBLEAKDB.* TO '$DBUSR'@'%';
 
 FLUSH PRIVILEGES;
 
-USE breaches;
+USE $DBBREACHDB;
 
 CREATE TABLE IF NOT EXISTS breaches (
     id int NOT NULL auto_increment PRIMARY KEY,
@@ -65,15 +66,15 @@ CREATE TABLE IF NOT EXISTS entry_links (
     target_table VARCHAR(255) NOT NULL,
     target_id int NOT NULL,
     link_type VARCHAR(100) NOT NULL DEFAULT 'related',
-    created_by VARCHAR(255) NOT NULL, 
+    created_by VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_source (source_table, source_id),
     INDEX idx_target (target_table, target_id)
 );
 
-USE backend;
+USE $DBLEAKDB;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id int NOT NULL auto_increment PRIMARY KEY,
     username VARCHAR(32) NOT NULL UNIQUE,
     hash VARCHAR(255) NOT NULL,
@@ -84,9 +85,9 @@ CREATE TABLE users (
     auth_token_expire TIMESTAMP NULL DEFAULT NULL,
     last_login_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login_ip VARCHAR(255) NOT NULL
-    );
+);
 
-CREATE TABLE api_key (
+CREATE TABLE IF NOT EXISTS api_key (
     name VARCHAR(32) NOT NULL,
     uuid VARCHAR(64) NOT NULL UNIQUE,
     user_id INT NOT NULL,
@@ -97,8 +98,150 @@ CREATE TABLE api_key (
     auth_token_expire TIMESTAMP NULL DEFAULT NULL
 );
 EOF
-cat > $pwd/Dockerfiles/.env <<EOF
-MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+}
+
+write_server_config() {
+    cat > "$PROJECT_DIR/config/server_config.yml" <<EOF
+database:
+  host: $DBIP
+  port: 3306
+  user: $DBUSR
+  password: $DBPASS
+  breaches_db: $DBBREACHDB
+  backend_db: $DBLEAKDB
+
+api:
+  name: LeakLens
+  business_id: ${BUSINESS_ID:-notimplemented}
+  location: ${LOCATION:-notimplemented}
+  version: ${VERSION:-1.0.0}
+
+  containers_to_monitor:$CONTAINERS
 EOF
-cd Dockerfiles
+}
+
+write_docker_compose() {
+    cat > "$PROJECT_DIR/docker-compose.yml" <<EOF
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_server
+    ports:
+      - "80:80"
+    volumes:
+      - ./web_data/frontend:/usr/share/nginx/html
+      - ./data/shared:/usr/share/nginx/html/static/avatars/useruploaded
+      - ./data/logs:/var/log/nginx
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./web_data/backend
+    container_name: fastapi_server
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./web_data/backend/server:/app
+      - ./data/shared:/app/avatars
+      - ./config:/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    working_dir: /app
+    environment:
+      SHARED_PUBLIC_DIR: /app/avatars
+      CONFIG_FILE: /config/server_config.yml
+      DOCKER_HOST: unix:///var/run/docker.sock
+    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+    restart: unless-stopped
+EOF
+
+    if ! $USE_OWN_MARIADB; then
+        cat >> "$PROJECT_DIR/docker-compose.yml" <<EOF
+
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb_server
+    ports:
+      - "3305:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
+      - ./config/mariadb-init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+EOF
+    fi
+}
+
+MYSQL_ROOT_PASSWORD="$(randpass)"
+MYSQL_LEAKLENS_PASSWORD="$(randpass)"
+VERSION="$(cat "$PROJECT_DIR/config/.version" 2>/dev/null || echo "1.0.0")"
+
+read -r -p "Are you using your own MariaDB (Y/N): " answer
+
+if [[ "$answer" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
+    USE_OWN_MARIADB=true
+
+    prompt DBIP "MariaDB IP: "
+    prompt DBUSR "MariaDB Username: "
+
+    read -r -s -p "MariaDB Password: " DBPASS
+    echo
+
+    prompt DBBREACHDB "MariaDB breaches DB: "
+    prompt DBLEAKDB "MariaDB backend DB: "
+
+    CONTAINERS=$'\n    - nginx_server\n    - fastapi_server'
+else
+    USE_OWN_MARIADB=false
+
+    mkdir -p "$PROJECT_DIR/config/mariadb-init"
+    mkdir -p "$PROJECT_DIR/data/mariadb"
+
+    DBIP="mariadb"
+    DBUSR="LeakLens"
+    DBPASS="$MYSQL_LEAKLENS_PASSWORD"
+    DBBREACHDB="breaches"
+    DBLEAKDB="backend"
+
+    CONTAINERS=$'\n    - nginx_server\n    - fastapi_server\n    - mariadb_server'
+
+    write_mariadb_init
+fi
+
+write_server_config
+write_docker_compose
+
+echo
+echo "===================================="
+echo "LeakLens Configuration Complete"
+echo "===================================="
+echo "Using External MariaDB: $USE_OWN_MARIADB"
+echo "Database Host: $DBIP"
+echo "Database User: $DBUSR"
+echo "Breaches DB: $DBBREACHDB"
+echo "Backend DB: $DBLEAKDB"
+
+if ! $USE_OWN_MARIADB; then
+    echo
+    echo "Generated MariaDB Credentials:"
+    echo "Root Password: $MYSQL_ROOT_PASSWORD"
+    echo "LeakLens Password: $MYSQL_LEAKLENS_PASSWORD"
+fi
+
+echo
+echo "Generated Files:"
+echo "  config/server_config.yml"
+echo "  docker-compose.yml"
+
+if ! $USE_OWN_MARIADB; then
+    echo "  config/mariadb-init/init.sql"
+fi
+
+echo
+echo "Start services with:"
 docker compose up -d
+echo "then sign up"
+echo "http://${IP_ADDR}/sign-up"

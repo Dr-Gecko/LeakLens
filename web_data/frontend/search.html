@@ -27,13 +27,54 @@
 	<link href="./dist/css/demo.min.css" rel="stylesheet" />
 	<style>
 		@import url('https://rsms.me/inter/inter.css');
+
+		.ll-note-body {
+			font-size: 0.875rem;
+			line-height: 1.6;
+		}
+
+		.ll-note-body p {
+			margin-bottom: 0.4rem;
+		}
+
+		.ll-note-body p:last-child {
+			margin-bottom: 0;
+		}
+
+		.ll-note-body ul,
+		.ll-note-body ol {
+			padding-left: 1.25rem;
+			margin-bottom: 0.4rem;
+		}
+
+		.ll-note-body code {
+			font-size: 0.8em;
+			background: var(--tblr-bg-surface-secondary);
+			padding: 0.1em 0.3em;
+			border-radius: 3px;
+		}
+
+		.ll-note-body pre {
+			background: var(--tblr-bg-surface-secondary);
+			padding: 0.5rem;
+			border-radius: 4px;
+			overflow-x: auto;
+		}
+
+		.ll-note-body h1,
+		.ll-note-body h2,
+		.ll-note-body h3 {
+			font-size: 1em;
+			font-weight: 600;
+			margin: 0.5rem 0 0.25rem;
+		}
 	</style>
 </head>
 
 <body>
 	<script src="./dist/js/demo-theme.min.js"></script>
-	<script src="./dist/customjs/search.js?v=0.0.4" defer></script>
-	<script src="./dist/customjs/leaklens.js?v=16.0.0"></script>
+	<script src="./dist/customjs/search.js?v=23.0.0" defer></script>
+	<script src="./dist/customjs/leaklens.js?v=16.14.0"></script>
 	<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
@@ -126,7 +167,7 @@
 					<div class="row g-2 align-items-center">
 						<div class="col">
 							<div class="page-pretitle">Overview</div>
-							<h2 class="page-title">Dashboard</h2>
+							<h2 class="page-title">Search</h2>
 						</div>
 						<div class="col-auto col-md-5 col-lg-4">
 							<div class="input-group">
@@ -182,8 +223,8 @@
 					<div class="row text-center align-items-center flex-row-reverse">
 						<div class="col-lg-auto ms-lg-auto">
 							<ul class="list-inline list-inline-dots mb-0">
-								<li class="list-inline-item"><a href="https://leaklens.drgecko.xyz/"
-										target="_blank" class="link-secondary" rel="noopener">Documentation</a>
+								<li class="list-inline-item"><a href="https://leaklens.drgecko.xyz/" target="_blank"
+										class="link-secondary" rel="noopener">Documentation</a>
 								</li>
 								<li class="list-inline-item"><a href="./license.html" class="link-secondary">License</a>
 								</li>
@@ -209,7 +250,76 @@
 			</footer>
 		</div>
 	</div>
+
+	<div class="modal modal-blur fade" id="ll-notes-modal" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">New Note</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label class="form-label">Textarea <span class="form-label-description">56/100</span></label>
+						<textarea class="form-control" name="example-textarea-input" rows="6"
+							placeholder="Content..">yournotehere</textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<a href="#" class="btn btn-link link-secondary btn-3" data-bs-dismiss="modal">
+						Cancel
+					</a>
+					<a href="#" id="btn-create-note-submit" class="btn btn-primary btn-5 ms-auto">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+							class="icon icon-2">
+							<path d="M12 5l0 14" />
+							<path d="M5 12l14 0" />
+						</svg>
+						Create note
+					</a>
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+	
+	
+	<!-- Notes view modal (read-only markdown render) -->
+	<div class="modal modal-blur fade" id="ll-notes-view-modal" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div>
+						<h5 class="modal-title">Notes</h5>
+						<div class="text-secondary small" id="ll-notes-view-subtitle"></div>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="ll-notes-view-body"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Links modal -->
+	<div class="modal modal-blur fade" id="ll-links-modal" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div>
+						<h5 class="modal-title">Links</h5>
+						<div class="text-secondary small" id="ll-links-modal-subtitle"></div>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body p-0" id="ll-links-modal-body"></div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Tabler Core -->
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 	<script src="./dist/js/tabler.min.js" defer></script>
 	<script src="./dist/js/demo.min.js" defer></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

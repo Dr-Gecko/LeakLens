@@ -2,9 +2,10 @@ import re
 from typing import Any
 from fastapi import status
 from decimal import Decimal
-from datetime import datetime, date
+from warnings import deprecated
 from functions.helpers import database
 from fastapi.responses import JSONResponse
+from datetime import datetime, timezone, date
 # Breaches Table Format
 def safe_table_name(name: str) -> str:
     name=name.replace(" ","_").lower()
@@ -20,10 +21,9 @@ def generate_breach_table(breach_name):
         name TEXT null,
         socials TEXT null,
         pii TEXT null,
-        extra TEXT null
+        extra TEXT null,
     )"""
     return breach_table,adapted_table_name
-
 
 allowed_self_edit_columns = {
     "email",
@@ -46,6 +46,7 @@ rbac_reference = {
     "owner":4,
     "root":5
 }
+@deprecated("Use api_response",stacklevel=10)
 def format_response(data: Any = None, status_code: int = status.HTTP_200_OK, reason: str = "success"):
     return JSONResponse(
         status_code=status_code,
@@ -54,6 +55,12 @@ def format_response(data: Any = None, status_code: int = status.HTTP_200_OK, rea
             "data": clean_json(data) if data is not None else {},
         },
     )
+
+def api_response(data: Any = None,message: str = "Success",status_code: int = status.HTTP_200_OK,success: bool | None = None,meta: dict | None = None,error: dict | None = None):
+    if success is None:
+        success = status_code < 400
+    return JSONResponse(status_code=status_code,content={"success": success,"status_code": status_code,"message": message,"timestamp": datetime.now(timezone.utc).isoformat(),"data": clean_json(data) if data is not None else {},"meta": meta or {},"error": error})
+
 def clean_json(data):
     if isinstance(data, list):
         return [clean_json(item) for item in data]
