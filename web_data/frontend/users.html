@@ -32,7 +32,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="./dist/js/demo-theme.min.js"></script>
 	<script src="./dist/customjs/leaklens.js?v=16.14.0"></script>
-	<script src="./dist/customjs/users.js?v=0.0.6"></script>
+	<script src="./dist/customjs/users.js?v=0.0.7"></script>
 	<div class="page">
 		<!-- Navbar -->
 		<header class="navbar navbar-expand-md d-print-none">
@@ -125,7 +125,7 @@
 							<h2 class="page-title">
 								Users
 							</h2>
-							<div class="text-secondary mt-1">1-18 of <span id="user_count">usercount</span> users</div>
+							<div class="text-secondary mt-1" id="users_info">1-18 of <span id="user_count">usercount</span> users</div>
 						</div>
 						<!-- Page title actions -->
 						<div class="col-auto ms-auto d-print-none">
@@ -153,35 +153,7 @@
 				<div class="container-xl">
 					<div class="row row-cards" id="users"></div>
 					<div class="d-flex mt-4">
-						<ul class="pagination ms-auto">
-							<li class="page-item disabled">
-								<a class="page-link" href="#" tabindex="-1" aria-disabled="true">
-									<!-- Download SVG icon from http://tabler.io/icons/icon/chevron-left -->
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-										fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-										stroke-linejoin="round" class="icon icon-1">
-										<path d="M15 6l-6 6l6 6" />
-									</svg>
-									prev
-								</a>
-							</li>
-							<li class="page-item active"><a class="page-link" href="#">1</a></li>
-							<li class="page-item"><a class="page-link" href="#">2</a></li>
-							<li class="page-item"><a class="page-link" href="#">3</a></li>
-							<li class="page-item"><a class="page-link" href="#">4</a></li>
-							<li class="page-item"><a class="page-link" href="#">5</a></li>
-							<li class="page-item">
-								<a class="page-link" href="#">
-									next
-									<!-- Download SVG icon from http://tabler.io/icons/icon/chevron-right -->
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-										fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-										stroke-linejoin="round" class="icon icon-1">
-										<path d="M9 6l6 6l-6 6" />
-									</svg>
-								</a>
-							</li>
-						</ul>
+						<ul class="pagination ms-auto" id="users_pagination"></ul>
 					</div>
 				</div>
 			</div>
